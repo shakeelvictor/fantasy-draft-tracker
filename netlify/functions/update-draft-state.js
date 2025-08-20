@@ -29,7 +29,8 @@ exports.handler = async (event, context) => {
         };
     }
 
-    if (!process.env.DATABASE_URL) {
+    const databaseUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
+    if (!databaseUrl) {
         return {
             statusCode: 500,
             headers,
@@ -49,7 +50,7 @@ exports.handler = async (event, context) => {
             };
         }
 
-        const sql = neon(process.env.DATABASE_URL);
+        const sql = neon(databaseUrl);
         const draftId = 'main'; // Default draft ID
         const state = data.state;
 

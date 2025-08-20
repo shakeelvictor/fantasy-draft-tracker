@@ -13,16 +13,17 @@ exports.handler = async (event, context) => {
         return { statusCode: 200, headers, body: '' };
     }
 
-    if (!process.env.DATABASE_URL) {
+    const databaseUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
+    if (!databaseUrl) {
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: 'DATABASE_URL not configured' })
+            body: JSON.stringify({ error: 'Database URL not configured' })
         };
     }
 
     try {
-        const sql = neon(process.env.DATABASE_URL);
+        const sql = neon(databaseUrl);
 
         // Create draft_state table
         await sql`

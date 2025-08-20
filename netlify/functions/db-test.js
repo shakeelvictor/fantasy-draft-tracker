@@ -18,14 +18,17 @@ exports.handler = async (event, context) => {
         tests: []
     };
 
-    // Test 1: Check if DATABASE_URL is configured
+    // Test 1: Check if database URL is configured (try both variants)
+    const databaseUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
     testResults.tests.push({
         name: "Environment Variable Check",
-        status: process.env.DATABASE_URL ? "✅ PASS" : "❌ FAIL",
-        details: process.env.DATABASE_URL ? "DATABASE_URL is configured" : "DATABASE_URL environment variable not found"
+        status: databaseUrl ? "✅ PASS" : "❌ FAIL",
+        details: databaseUrl 
+            ? `Database URL configured via ${process.env.NETLIFY_DATABASE_URL ? 'NETLIFY_DATABASE_URL' : 'DATABASE_URL'}` 
+            : "No database URL environment variable found"
     });
 
-    if (!process.env.DATABASE_URL) {
+    if (!databaseUrl) {
         return {
             statusCode: 200,
             headers,
@@ -34,7 +37,7 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const sql = neon(process.env.DATABASE_URL);
+        const sql = neon(databaseUrl);
 
         // Test 2: Database Connection
         try {
