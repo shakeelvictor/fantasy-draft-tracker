@@ -1023,14 +1023,14 @@
             startDatabasePolling() {
                 console.log('🔄 Starting database polling for real-time sync');
                 
-                // Poll database every 2 seconds for real-time updates
+                // Poll database every 1 second for real-time updates
                 this.pollingInterval = setInterval(async () => {
                     try {
                         await this.pollDatabaseForUpdates();
                     } catch (error) {
                         console.error('❌ Error polling database:', error);
                     }
-                }, 2000);
+                }, 1000);
             }
 
             async pollDatabaseForUpdates() {
@@ -1082,6 +1082,17 @@
                     }
                 } catch (error) {
                     console.error('🚨 Database polling error:', error);
+                }
+            }
+
+            triggerImmediateSync() {
+                // Force an immediate database poll for real-time sync
+                console.log('⚡ Triggering immediate sync for all clients');
+                try {
+                    // Poll immediately without waiting for the interval
+                    this.pollDatabaseForUpdates();
+                } catch (error) {
+                    console.error('❌ Error in immediate sync:', error);
                 }
             }
 
@@ -1301,6 +1312,11 @@
                         const result = await response.json();
                         console.log('✅ Successfully pushed state to shared endpoint:', result);
                         this.lastPushTime = Date.now(); // Record when we pushed
+                        
+                        // Trigger immediate polling for all connected clients after 200ms delay
+                        setTimeout(() => {
+                            this.triggerImmediateSync();
+                        }, 200);
                     } else if (response.status === 404) {
                         console.log('⚠️ Netlify Functions not deployed - using localStorage broadcast');
                         this.broadcastViaStorage(data);
