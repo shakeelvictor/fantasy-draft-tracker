@@ -1,0 +1,13 @@
+{
+  "name": "fantasy-draft-tracker",
+  "version": "1.0.0",
+  "description": "Real-time fantasy sports draft tracking application",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "dev": "echo 'Open index.html in browser'"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": "18"
+  }
+}
