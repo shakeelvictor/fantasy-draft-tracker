@@ -6,7 +6,9 @@
     "build": "echo 'Static site - no build needed'",
     "dev": "echo 'Open index.html in browser'"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  },
   "engines": {
     "node": "18"
   }
