@@ -1010,28 +1010,69 @@
                 const isDeployed = !window.location.hostname.includes('localhost') && 
                                  !window.location.hostname.includes('127.0.0.1');
                 
-                // Simple real-time sync for all users
+                // Start database polling for real-time sync on all deployed environments
                 if (isDeployed) {
-                    console.log('🌐 Starting real-time sync for collaborative mode');
-                    this.startPolling();
+                    console.log('🌐 Starting database polling for real-time sync');
+                    this.startDatabasePolling();
+                } else {
+                    console.log('🏠 Local development - using localStorage only');
                 }
             }
 
 
-            startPolling() {
-                console.log('🔄 Starting real-time polling for collaborative mode');
+            startDatabasePolling() {
+                console.log('🔄 Starting database polling for real-time sync');
                 
-                // For deployed environments, poll from shared endpoint
-                setInterval(async () => {
+                // Poll database every 2 seconds for real-time updates
+                this.pollingInterval = setInterval(async () => {
                     try {
-                        // Skip localStorage for better cross-device sync
-                        // Method: Fetch from shared endpoint (for deployed apps)
-                        await this.pollFromSharedEndpoint();
-                        
+                        await this.pollDatabaseForUpdates();
                     } catch (error) {
-                        console.error('❌ Error polling for updates:', error);
+                        console.error('❌ Error polling database:', error);
                     }
-                }, 3000); // Poll every 3 seconds for better balance of responsiveness and performance
+                }, 2000);
+            }
+
+            async pollDatabaseForUpdates() {
+                try {
+                    const response = await fetch('/api/draft-state', {
+                        method: 'GET',
+                        cache: 'no-cache',
+                        headers: { 'Cache-Control': 'no-cache' }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const serverTimestamp = data.timestamp;
+                        const localTimestamp = this.state.lastUpdate || 0;
+
+                        console.log('📊 Database poll result:', {
+                            serverTime: serverTimestamp,
+                            localTime: localTimestamp,
+                            isNewer: serverTimestamp > localTimestamp,
+                            picksCount: data.state?.picks?.length || 0
+                        });
+
+                        // Only update if server data is newer
+                        if (serverTimestamp > localTimestamp) {
+                            console.log('✅ Updating from database');
+                            
+                            // Merge the server state with current state
+                            const mergedState = this.mergeStates(this.state, data.state);
+                            this.state = {
+                                ...mergedState,
+                                lastUpdate: serverTimestamp
+                            };
+                            
+                            // Notify components without broadcasting (prevent loops)
+                            this.notify(false);
+                        }
+                    } else {
+                        console.warn('⚠️ Database poll failed:', response.status);
+                    }
+                } catch (error) {
+                    console.error('🚨 Database polling error:', error);
+                }
             }
 
             // Intelligent state merging to preserve local changes
@@ -3754,6 +3795,7 @@
 
             const [showPlayerOverlay, setShowPlayerOverlay] = useState(false);
             const [showDraftComplete, setShowDraftComplete] = useState(false);
+            const [shownPickIds, setShownPickIds] = useState(new Set());
 
             // Load players on mount
             useEffect(() => {
@@ -3766,12 +3808,20 @@
                 }
             }, []);
 
-            // Handle recent pick overlay
+            // Handle recent pick overlay - only show once per unique pick
             useEffect(() => {
-                if (recentPick) {
-                    setShowPlayerOverlay(true);
+                if (recentPick && !isViewOnly) {
+                    const pickId = `${recentPick.playerId}-${recentPick.teamId}-${recentPick.round}`;
+                    
+                    if (!shownPickIds.has(pickId)) {
+                        console.log('📱 Showing modal for new pick:', pickId);
+                        setShowPlayerOverlay(true);
+                        setShownPickIds(prev => new Set([...prev, pickId]));
+                    } else {
+                        console.log('⏭️ Modal already shown for pick:', pickId);
+                    }
                 }
-            }, [recentPick]);
+            }, [recentPick, isViewOnly, shownPickIds]);
 
             // Handle draft completion overlay
             useEffect(() => {
