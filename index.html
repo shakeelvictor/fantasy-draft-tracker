@@ -801,13 +801,42 @@
                 this.listeners = new Set();
                 this.isViewOnly = false;
 
+                console.log('DraftStore: Initializing...');
+
                 // Load state first, then ensure it's properly initialized
                 this.state = this.loadState();
+                console.log('DraftStore: State after loadState:', {
+                    hasTeams: !!this.state?.teams,
+                    teamsLength: this.state?.teams?.length,
+                    hasDraftSettings: !!this.state?.draftSettings,
+                    teamCount: this.state?.draftSettings?.teamCount,
+                    rounds: this.state?.draftSettings?.rounds
+                });
 
                 // Ensure state is initialized even if loading fails
                 if (!this.state) {
+                    console.log('DraftStore: No state found, creating initial state');
                     this.state = this.getInitialState();
                 }
+
+                // Validate essential properties
+                if (!this.state.teams || !Array.isArray(this.state.teams) || this.state.teams.length === 0) {
+                    console.warn('DraftStore: Teams not properly initialized, resetting to initial state');
+                    this.state = this.getInitialState();
+                }
+
+                if (!this.state.draftSettings || !this.state.draftSettings.teamCount || !this.state.draftSettings.rounds) {
+                    console.warn('DraftStore: Draft settings not properly initialized, resetting to initial state');
+                    this.state = this.getInitialState();
+                }
+
+                console.log('DraftStore: Final state after validation:', {
+                    hasTeams: !!this.state?.teams,
+                    teamsLength: this.state?.teams?.length,
+                    hasDraftSettings: !!this.state?.draftSettings,
+                    teamCount: this.state?.draftSettings?.teamCount,
+                    rounds: this.state?.draftSettings?.rounds
+                });
 
                 // Force save initial state to ensure persistence works
                 this.saveState();
@@ -2453,24 +2482,50 @@
 
             const isMobile = useIsMobile();
 
-            // Add defensive checks to prevent rendering issues
-            if (!teams || !Array.isArray(teams) || teams.length === 0) {
-                console.warn('DraftBoard: teams not properly loaded', teams);
+            // Add defensive checks to prevent rendering issues, but be less restrictive
+            if (!teams || !Array.isArray(teams)) {
+                console.warn('DraftBoard: teams not properly loaded', { teams, type: typeof teams, isArray: Array.isArray(teams) });
                 return (
                     <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
                         <div className="text-center text-slate-400 py-8">
-                            Loading teams...
+                            Loading teams... (teams not array)
                         </div>
                     </div>
                 );
             }
 
-            if (!draftSettings || !draftSettings.teamCount || !draftSettings.rounds) {
-                console.warn('DraftBoard: draftSettings not properly loaded', draftSettings);
+            if (teams.length === 0) {
+                console.warn('DraftBoard: teams array is empty', teams);
                 return (
                     <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
                         <div className="text-center text-slate-400 py-8">
-                            Loading draft settings...
+                            Loading teams... (empty array)
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!draftSettings || typeof draftSettings !== 'object') {
+                console.warn('DraftBoard: draftSettings not properly loaded', { draftSettings, type: typeof draftSettings });
+                return (
+                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
+                        <div className="text-center text-slate-400 py-8">
+                            Loading draft settings... (not object)
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!draftSettings.teamCount || !draftSettings.rounds) {
+                console.warn('DraftBoard: draftSettings missing required properties', { 
+                    teamCount: draftSettings.teamCount, 
+                    rounds: draftSettings.rounds,
+                    draftSettings 
+                });
+                return (
+                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
+                        <div className="text-center text-slate-400 py-8">
+                            Loading draft settings... (missing properties)
                         </div>
                     </div>
                 );
