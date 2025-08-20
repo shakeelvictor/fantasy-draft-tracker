@@ -1,0 +1,11 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify serverless functions for fantasy draft tracker",
+  "main": "index.js",
+  "scripts": {},
+  "dependencies": {},
+  "engines": {
+    "node": "18"
+  }
+}
