@@ -1038,7 +1038,10 @@
                     const response = await fetch('/api/draft-state', {
                         method: 'GET',
                         cache: 'no-cache',
-                        headers: { 'Cache-Control': 'no-cache' }
+                        headers: { 
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
                     });
 
                     if (response.ok) {
@@ -1046,16 +1049,21 @@
                         const serverTimestamp = data.timestamp;
                         const localTimestamp = this.state.lastUpdate || 0;
 
-                        console.log('📊 Database poll result:', {
-                            serverTime: serverTimestamp,
-                            localTime: localTimestamp,
+                        const isViewOnlyMode = this.isViewOnly ? '[VIEW-ONLY]' : '[INTERACTIVE]';
+                        console.log(`📊 ${isViewOnlyMode} Database poll:`, {
+                            serverTime: new Date(serverTimestamp).toLocaleTimeString(),
+                            localTime: new Date(localTimestamp).toLocaleTimeString(),
+                            timeDiff: serverTimestamp - localTimestamp,
                             isNewer: serverTimestamp > localTimestamp,
-                            picksCount: data.state?.picks?.length || 0
+                            serverPicks: data.state?.picks?.length || 0,
+                            localPicks: this.state.picks?.length || 0,
+                            serverKeepers: Object.keys(data.state?.keepers || {}).length,
+                            localKeepers: Object.keys(this.state.keepers || {}).length
                         });
 
-                        // Only update if server data is newer
-                        if (serverTimestamp > localTimestamp) {
-                            console.log('✅ Updating from database');
+                        // Only update if server data is newer (allow small time difference for clock skew)
+                        if (serverTimestamp > localTimestamp + 100) {
+                            console.log(`✅ ${isViewOnlyMode} Updating from database - picks changed from ${this.state.picks?.length || 0} to ${data.state?.picks?.length || 0}`);
                             
                             // Merge the server state with current state
                             const mergedState = this.mergeStates(this.state, data.state);
@@ -1066,6 +1074,8 @@
                             
                             // Notify components without broadcasting (prevent loops)
                             this.notify(false);
+                        } else {
+                            console.log(`⏭️ ${isViewOnlyMode} No database update needed`);
                         }
                     } else {
                         console.warn('⚠️ Database poll failed:', response.status);
@@ -3810,11 +3820,12 @@
 
             // Handle recent pick overlay - only show once per unique pick
             useEffect(() => {
-                if (recentPick && !isViewOnly) {
+                if (recentPick) {
                     const pickId = `${recentPick.playerId}-${recentPick.teamId}-${recentPick.round}`;
                     
                     if (!shownPickIds.has(pickId)) {
-                        console.log('📱 Showing modal for new pick:', pickId);
+                        const modeLabel = isViewOnly ? '[VIEW-ONLY]' : '[INTERACTIVE]';
+                        console.log(`📱 ${modeLabel} Showing modal for new pick:`, pickId);
                         setShowPlayerOverlay(true);
                         setShownPickIds(prev => new Set([...prev, pickId]));
                     } else {
