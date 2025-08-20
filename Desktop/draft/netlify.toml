@@ -3,6 +3,9 @@
   functions = "netlify/functions"
   command = "chmod +x build.sh && ./build.sh"
 
+[functions]
+  node_bundler = "esbuild"
+
 [[redirects]]
   from = "/api/draft-state.json"
   to = "/.netlify/functions/draft-state"
