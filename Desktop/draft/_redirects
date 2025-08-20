@@ -1,4 +1,0 @@
-/api/draft-state.json /.netlify/functions/draft-state 200
-/api/update-draft-state /.netlify/functions/update-draft-state 200
-/api/test /.netlify/functions/test 200
-/api/hello /.netlify/functions/hello 200
