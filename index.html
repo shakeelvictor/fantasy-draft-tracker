@@ -1845,7 +1845,7 @@
                         currentHistoryIndex: currentHistoryIndex - 1,
                         recentPick: null,
                         draftJustCompleted: false
-                    });
+                    }, true); // Enable broadcast for real-time sync
                 }
             }
 
@@ -2738,8 +2738,10 @@
                                                                         e.target.style.display = 'none';
                                                                     }}
                                                                 />
-                                                                <div className="font-bold text-white text-xs sm:text-sm truncate flex-1">
-                                                                    {isMobile ? playerInfo.name.split(' ').pop() : playerInfo.name}
+                                                                <div className="font-bold text-white text-xs sm:text-sm flex-1 leading-tight">
+                                                                    <div className={isMobile ? "text-[10px] leading-tight overflow-hidden" : ""}>
+                                                                        {playerInfo.name}
+                                                                    </div>
                                                                     {pick.pending && (
                                                                         <span className="text-yellow-400 text-[8px] ml-1">(KEEPER)</span>
                                                                     )}
@@ -3813,7 +3815,7 @@
                                     Real-time draft tracking with keeper management
                                 </p>
                             </div>
-                            <DraftControls />
+                            {!isViewOnly && <DraftControls />}
                         </div>
 
                         {/* FIX 2: Archive persistence notification */}
@@ -3835,8 +3837,8 @@
                             <DraftBoard />
                         </div>
 
-                        {/* Player Panel */}
-                        <PlayerList />
+                        {/* Player Panel - Hidden in view-only mode */}
+                        {!isViewOnly && <PlayerList />}
 
                         {/* Overlays */}
                         {showPlayerOverlay && recentPick && (
