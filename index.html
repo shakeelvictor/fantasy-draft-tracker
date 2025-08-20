@@ -800,6 +800,7 @@
             constructor() {
                 this.listeners = new Set();
                 this.isViewOnly = false;
+                this.lastPushTime = 0; // Track when we last pushed to avoid race conditions
 
                 console.log('DraftStore: Initializing...');
 
@@ -1033,6 +1034,13 @@
 
             async pollFromSharedEndpoint() {
                 try {
+                    // Skip polling if we just pushed (avoid race conditions)
+                    const timeSinceLastPush = Date.now() - this.lastPushTime;
+                    if (timeSinceLastPush < 5000) { // Skip for 5 seconds after push
+                        console.log('⏭️ Skipping poll - recent push detected');
+                        return;
+                    }
+                    
                     console.log('🔗 Fetching from shared state endpoint');
                     
                     // Try the API endpoint
@@ -1066,7 +1074,10 @@
                         console.log('📥 Received shared data:', { 
                             timestamp: sharedData.timestamp, 
                             currentTimestamp: this.state.lastUpdate,
-                            picks: sharedData.state?.picks?.length || 0
+                            picksCount: sharedData.state?.picks?.length || 0,
+                            keepersCount: Object.keys(sharedData.state?.keepers || {}).length,
+                            currentPick: sharedData.state?.currentPick,
+                            isNewer: sharedData.timestamp > (this.state.lastUpdate || 0)
                         });
                         
                         if (sharedData.timestamp > (this.state.lastUpdate || 0)) {
@@ -1157,6 +1168,12 @@
             async pushToSharedEndpoint(data) {
                 try {
                     console.log('📤 Attempting to push to /api/update-draft-state');
+                    console.log('📊 Data being pushed:', {
+                        timestamp: data.timestamp,
+                        picksCount: data.state?.picks?.length || 0,
+                        keepersCount: Object.keys(data.state?.keepers || {}).length,
+                        currentPick: data.state?.currentPick
+                    });
                     
                     // Try to push to a Netlify Function or API endpoint
                     const response = await fetch('/api/update-draft-state', {
@@ -1172,6 +1189,7 @@
                     if (response.ok) {
                         const result = await response.json();
                         console.log('✅ Successfully pushed state to shared endpoint:', result);
+                        this.lastPushTime = Date.now(); // Record when we pushed
                     } else if (response.status === 404) {
                         console.log('⚠️ Netlify Functions not deployed - using localStorage broadcast');
                         this.broadcastViaStorage(data);
