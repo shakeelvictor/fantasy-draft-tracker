@@ -2076,8 +2076,33 @@
             const [state, setState] = useState(draftStore.state);
 
             useEffect(() => {
-                return draftStore.subscribe(setState);
+                console.log('useDraftStore: Initial hook setup, draftStore.state:', {
+                    hasTeams: !!draftStore.state?.teams,
+                    teamsLength: draftStore.state?.teams?.length,
+                    hasDraftSettings: !!draftStore.state?.draftSettings,
+                    teamCount: draftStore.state?.draftSettings?.teamCount,
+                    stateKeys: Object.keys(draftStore.state || {})
+                });
+                
+                const unsubscribe = draftStore.subscribe((newState) => {
+                    console.log('useDraftStore: State update received:', {
+                        hasTeams: !!newState?.teams,
+                        teamsLength: newState?.teams?.length,
+                        hasDraftSettings: !!newState?.draftSettings,
+                        teamCount: newState?.draftSettings?.teamCount
+                    });
+                    setState(newState);
+                });
+                
+                return unsubscribe;
             }, []);
+
+            console.log('useDraftStore: Current state in hook:', {
+                hasTeams: !!state?.teams,
+                teamsLength: state?.teams?.length,
+                hasDraftSettings: !!state?.draftSettings,
+                teamCount: state?.draftSettings?.teamCount
+            });
 
             return {
                 ...state,
@@ -2482,54 +2507,21 @@
 
             const isMobile = useIsMobile();
 
-            // Add defensive checks to prevent rendering issues, but be less restrictive
-            if (!teams || !Array.isArray(teams)) {
-                console.warn('DraftBoard: teams not properly loaded', { teams, type: typeof teams, isArray: Array.isArray(teams) });
-                return (
-                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
-                        <div className="text-center text-slate-400 py-8">
-                            Loading teams... (teams not array)
-                        </div>
-                    </div>
-                );
-            }
+            // TEMPORARY: Remove all defensive checks to test if board renders
+            console.log('DraftBoard: Attempting to render with:', {
+                teams: teams,
+                teamsType: typeof teams,
+                teamsIsArray: Array.isArray(teams),
+                teamsLength: teams?.length,
+                draftSettings: draftSettings,
+                draftSettingsType: typeof draftSettings,
+                teamCount: draftSettings?.teamCount,
+                rounds: draftSettings?.rounds
+            });
 
-            if (teams.length === 0) {
-                console.warn('DraftBoard: teams array is empty', teams);
-                return (
-                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
-                        <div className="text-center text-slate-400 py-8">
-                            Loading teams... (empty array)
-                        </div>
-                    </div>
-                );
-            }
-
-            if (!draftSettings || typeof draftSettings !== 'object') {
-                console.warn('DraftBoard: draftSettings not properly loaded', { draftSettings, type: typeof draftSettings });
-                return (
-                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
-                        <div className="text-center text-slate-400 py-8">
-                            Loading draft settings... (not object)
-                        </div>
-                    </div>
-                );
-            }
-
-            if (!draftSettings.teamCount || !draftSettings.rounds) {
-                console.warn('DraftBoard: draftSettings missing required properties', { 
-                    teamCount: draftSettings.teamCount, 
-                    rounds: draftSettings.rounds,
-                    draftSettings 
-                });
-                return (
-                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
-                        <div className="text-center text-slate-400 py-8">
-                            Loading draft settings... (missing properties)
-                        </div>
-                    </div>
-                );
-            }
+            // Provide fallbacks instead of blocking render
+            const safeTeams = teams || [];
+            const safeDraftSettings = draftSettings || { teamCount: 11, rounds: 20 };
 
             const getPickForTeamAndRound = (teamId, round) => {
                 // First check if there's an actual pick made
@@ -2593,7 +2585,7 @@
                             <div className="text-sm sm:text-base text-blue-400 font-medium animate-pulse">
                                 Round {currentPick.round}, Pick {currentPick.pickNumber}
                                 <span className="text-slate-400 ml-2 block sm:inline">
-                                    ({teams.find(t => t.id === currentPick.teamId)?.name} on the clock)
+                                    ({safeTeams.find(t => t.id === currentPick.teamId)?.name} on the clock)
                                 </span>
                             </div>
                         )}
@@ -2610,12 +2602,12 @@
                             style={{
                                 gridTemplateColumns: isMobile
                                     ? window.innerWidth <= 480
-                                        ? `repeat(${teams.slice(0, draftSettings.teamCount).length}, minmax(120px, 1fr))`
-                                        : `repeat(${teams.slice(0, draftSettings.teamCount).length}, minmax(150px, 1fr))`
-                                    : `repeat(${teams.slice(0, draftSettings.teamCount).length}, minmax(200px, 1fr))`
+                                        ? `repeat(${safeTeams.slice(0, safeDraftSettings.teamCount).length}, minmax(120px, 1fr))`
+                                        : `repeat(${safeTeams.slice(0, safeDraftSettings.teamCount).length}, minmax(150px, 1fr))`
+                                    : `repeat(${safeTeams.slice(0, safeDraftSettings.teamCount).length}, minmax(200px, 1fr))`
                             }}
                         >
-                            {teams.slice(0, draftSettings.teamCount).map(team => (
+                            {safeTeams.slice(0, safeDraftSettings.teamCount).map(team => (
                                 <div key={team.id} className="team-column">
                                     <div
                                         className="team-header glass p-2 sm:p-4 rounded-t-lg text-center font-semibold text-xs sm:text-sm mb-2 sm:mb-3"
@@ -2629,7 +2621,7 @@
                                     </div>
 
                                     <div className="space-y-1 sm:space-y-2">
-                                        {Array.from({ length: draftSettings.rounds }, (_, roundIndex) => {
+                                        {Array.from({ length: safeDraftSettings.rounds }, (_, roundIndex) => {
                                             const round = roundIndex + 1;
                                             const pick = getPickForTeamAndRound(team.id, round);
                                             const playerInfo = pick ? getPlayerInfo(pick.playerId) : null;
