@@ -844,6 +844,11 @@
 
                 // Setup real-time sync listener
                 this.setupRealTimeSync();
+                
+                // If in view-only mode, immediately load state from database
+                if (this.isViewOnly) {
+                    this.loadInitialStateFromDatabase();
+                }
             }
 
             getInitialState() {
@@ -1102,6 +1107,43 @@
                 }
             }
 
+            async loadInitialStateFromDatabase() {
+                console.log('🔄 [VIEW-ONLY] Loading initial state from database...');
+                try {
+                    const response = await fetch('/api/draft-state', {
+                        method: 'GET',
+                        cache: 'no-cache',
+                        headers: { 
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('✅ [VIEW-ONLY] Loaded database state:', {
+                            picks: data.state?.picks?.length || 0,
+                            teams: data.state?.teams?.length || 0,
+                            timestamp: new Date(data.timestamp).toLocaleTimeString()
+                        });
+                        
+                        // Replace current state with database state
+                        this.state = {
+                            ...this.getInitialState(), // Start with defaults
+                            ...data.state, // Override with database state
+                            lastUpdate: data.timestamp
+                        };
+                        
+                        // Notify components to update UI
+                        this.notify(false);
+                    } else {
+                        console.warn('⚠️ [VIEW-ONLY] Failed to load from database:', response.status);
+                    }
+                } catch (error) {
+                    console.error('🚨 [VIEW-ONLY] Error loading initial state:', error);
+                }
+            }
+
             // Intelligent state merging to preserve local changes
             mergeStates(localState, remoteState) {
                 console.log('🔄 Merging states intelligently');
@@ -1117,35 +1159,48 @@
                         : remoteState.draftSettings
                 };
 
-                // Merge picks - combine both arrays and deduplicate
-                const localPicks = localState.picks || [];
-                const remotePicks = remoteState.picks || [];
-                const pickMap = new Map();
-                
-                // Add all picks to map (remote first, then local to prioritize local)
-                [...remotePicks, ...localPicks].forEach(pick => {
-                    if (pick && pick.teamId && pick.round) {
-                        const key = `${pick.teamId}-${pick.round}`;
-                        pickMap.set(key, pick);
-                    }
-                });
-                
-                merged.picks = Array.from(pickMap.values());
-
-                // Merge keepers - prioritize local keepers
-                merged.keepers = {
-                    ...(remoteState.keepers || {}),
-                    ...(localState.keepers || {})
-                };
-
-                // Use more recent currentPick
-                if (localState.currentPick && remoteState.currentPick) {
-                    // Use the one that's further in the draft
-                    const localProgress = (localState.currentPick.round - 1) * 12 + localState.currentPick.pickInRound;
-                    const remoteProgress = (remoteState.currentPick.round - 1) * 12 + remoteState.currentPick.pickInRound;
-                    merged.currentPick = localProgress >= remoteProgress ? localState.currentPick : remoteState.currentPick;
+                // For view-only mode, always trust remote state completely
+                // For interactive mode, merge intelligently
+                if (this.isViewOnly) {
+                    console.log('🔄 [VIEW-ONLY] Using remote state as source of truth');
+                    merged.picks = remoteState.picks || [];
+                    merged.currentPick = remoteState.currentPick;
+                    merged.keepers = remoteState.keepers || {};
+                    merged.recentPick = remoteState.recentPick;
                 } else {
-                    merged.currentPick = localState.currentPick || remoteState.currentPick;
+                    // Interactive mode: merge picks intelligently
+                    const localPicks = localState.picks || [];
+                    const remotePicks = remoteState.picks || [];
+                    const pickMap = new Map();
+                    
+                    // Add all picks to map (remote first, then local to prioritize local)
+                    [...remotePicks, ...localPicks].forEach(pick => {
+                        if (pick && pick.teamId && pick.round) {
+                            const key = `${pick.teamId}-${pick.round}`;
+                            pickMap.set(key, pick);
+                        }
+                    });
+                    
+                    merged.picks = Array.from(pickMap.values());
+                }
+
+                // Only merge keepers and currentPick if not in view-only mode
+                if (!this.isViewOnly) {
+                    // Merge keepers - prioritize local keepers
+                    merged.keepers = {
+                        ...(remoteState.keepers || {}),
+                        ...(localState.keepers || {})
+                    };
+
+                    // Use more recent currentPick
+                    if (localState.currentPick && remoteState.currentPick) {
+                        // Use the one that's further in the draft
+                        const localProgress = (localState.currentPick.round - 1) * 12 + localState.currentPick.pickInRound;
+                        const remoteProgress = (remoteState.currentPick.round - 1) * 12 + remoteState.currentPick.pickInRound;
+                        merged.currentPick = localProgress >= remoteProgress ? localState.currentPick : remoteState.currentPick;
+                    } else {
+                        merged.currentPick = localState.currentPick || remoteState.currentPick;
+                    }
                 }
 
                 console.log('🔄 Merge result:', {
