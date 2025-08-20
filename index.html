@@ -1010,7 +1010,9 @@
                 const isDeployed = !window.location.hostname.includes('localhost') && 
                                  !window.location.hostname.includes('127.0.0.1');
                 
-                if (isDeployed || isViewOnly) {
+                // TEMPORARY: Disable real-time polling to test localStorage-only mode
+                console.log('🚫 Real-time polling disabled - using localStorage only');
+                if (false && (isDeployed || isViewOnly)) {
                     console.log('🌐 Starting real-time polling for collaborative mode');
                     this.startPolling();
                 }
@@ -1547,7 +1549,13 @@
                 this.listeners.forEach(listener => listener(this.state));
                 this.saveState();
                 if (shouldBroadcast && !this.isViewOnly) {
-                    this.broadcastUpdate();
+                    // TEMPORARY: Use localStorage broadcast only (no API calls)
+                    console.log('📢 Broadcasting via localStorage only');
+                    this.broadcastViaStorage({
+                        timestamp: Date.now(),
+                        state: this.state
+                    });
+                    // this.broadcastUpdate();
                 }
             }
 
