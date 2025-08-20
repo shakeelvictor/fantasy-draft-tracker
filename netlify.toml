@@ -12,6 +12,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/draft-state"
+  to = "/.netlify/functions/draft-state"
+  status = 200
+
+[[redirects]]
   from = "/api/update-draft-state"
   to = "/.netlify/functions/update-draft-state"
   status = 200
@@ -19,6 +24,21 @@
 [[redirects]]
   from = "/api/test"
   to = "/.netlify/functions/test"
+  status = 200
+
+[[redirects]]
+  from = "/api/init-db"
+  to = "/.netlify/functions/init-db"
+  status = 200
+
+[[redirects]]
+  from = "/api/db-test"
+  to = "/.netlify/functions/db-test"
+  status = 200
+
+[[redirects]]
+  from = "/api/hello"
+  to = "/.netlify/functions/hello"
   status = 200
 
 [build.environment]
