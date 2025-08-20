@@ -1208,7 +1208,15 @@
                 try {
                     // Load main state
                     const saved = localStorage.getItem('fantasy-draft-state');
-                    const savedState = saved ? JSON.parse(saved) : null;
+                    let savedState = null;
+                    
+                    try {
+                        savedState = saved ? JSON.parse(saved) : null;
+                    } catch (parseError) {
+                        console.error('Error parsing saved state, starting fresh:', parseError);
+                        localStorage.removeItem('fantasy-draft-state'); // Clear corrupted data
+                        savedState = null;
+                    }
 
                     // Debug: Log what we're loading
                     console.log('Loading state from localStorage:', savedState);
@@ -1293,7 +1301,17 @@
                         archivedDrafts: archivedDrafts
                     };
                 } catch (e) {
-                    console.log('Could not load saved state, starting fresh:', e);
+                    console.error('Could not load saved state, starting fresh:', e);
+                    
+                    // Clear any corrupted data
+                    try {
+                        localStorage.removeItem('fantasy-draft-state');
+                        localStorage.removeItem('fantasy-draft-players');
+                        localStorage.removeItem('fantasy-draft-keepers-backup');
+                    } catch (clearError) {
+                        console.warn('Could not clear localStorage:', clearError);
+                    }
+                    
                     return this.getInitialState();
                 }
             }
@@ -2430,8 +2448,33 @@
 
             // Debug: Log keepers in DraftBoard component
             console.log('DraftBoard - Current keepers:', keepers);
+            console.log('DraftBoard - teams:', teams);
+            console.log('DraftBoard - draftSettings:', draftSettings);
 
             const isMobile = useIsMobile();
+
+            // Add defensive checks to prevent rendering issues
+            if (!teams || !Array.isArray(teams) || teams.length === 0) {
+                console.warn('DraftBoard: teams not properly loaded', teams);
+                return (
+                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
+                        <div className="text-center text-slate-400 py-8">
+                            Loading teams...
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!draftSettings || !draftSettings.teamCount || !draftSettings.rounds) {
+                console.warn('DraftBoard: draftSettings not properly loaded', draftSettings);
+                return (
+                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
+                        <div className="text-center text-slate-400 py-8">
+                            Loading draft settings...
+                        </div>
+                    </div>
+                );
+            }
 
             const getPickForTeamAndRound = (teamId, round) => {
                 // First check if there's an actual pick made
@@ -2634,8 +2677,22 @@
             // Debug: Log player data in PlayerList
             console.log('PlayerList - playersData keys count:', Object.keys(playersData || {}).length);
             console.log('PlayerList - playersData sample:', Object.keys(playersData || {}).slice(0, 3));
+            console.log('PlayerList - currentPick:', currentPick);
+            console.log('PlayerList - makePick function:', typeof makePick);
 
             const isMobile = useIsMobile();
+
+            // Add defensive check for essential functions
+            if (typeof makePick !== 'function') {
+                console.error('PlayerList: makePick is not a function');
+                return (
+                    <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
+                        <div className="text-center text-red-400 py-8">
+                            Error: Player selection unavailable
+                        </div>
+                    </div>
+                );
+            }
             const positions = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'DT', 'DE', 'LB', 'CB', 'S'];
 
             const filteredPlayers = useMemo(() => {
@@ -3516,6 +3573,43 @@
             );
         };
 
+        // Error Boundary Component
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error('React Error Boundary caught an error:', error, errorInfo);
+            }
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="min-h-screen animated-bg flex items-center justify-center">
+                            <div className="glass-dark rounded-xl p-6 max-w-md mx-4">
+                                <h2 className="text-xl font-bold text-red-400 mb-4">Something went wrong</h2>
+                                <p className="text-slate-300 mb-4">The app encountered an error. Please refresh the page to try again.</p>
+                                <button 
+                                    onClick={() => window.location.reload()} 
+                                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white"
+                                >
+                                    Refresh Page
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return this.props.children;
+            }
+        }
+
         // Main App Component
         const App = () => {
             const {
@@ -3636,9 +3730,13 @@
             );
         };
 
-        // Render the app
+        // Render the app with error boundary
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
     </script>
 </body>
 </html>
