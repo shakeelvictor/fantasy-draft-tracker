@@ -4,7 +4,9 @@
   "description": "Netlify serverless functions for fantasy draft tracker",
   "main": "index.js",
   "scripts": {},
-  "dependencies": {},
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  },
   "engines": {
     "node": "18"
   }

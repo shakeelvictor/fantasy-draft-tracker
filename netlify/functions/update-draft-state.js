@@ -1,6 +1,5 @@
-// Netlify Function to handle draft state updates
-const fs = require('fs').promises;
-const path = require('path');
+// Netlify Function to update draft state in Neon database
+const { neon } = require('@neondatabase/serverless');
 
 exports.handler = async (event, context) => {
     // Set CORS headers for all responses
@@ -30,6 +29,14 @@ exports.handler = async (event, context) => {
         };
     }
 
+    if (!process.env.DATABASE_URL) {
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: 'Database not configured' })
+        };
+    }
+
     try {
         const data = JSON.parse(event.body);
 
@@ -42,11 +49,57 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Store the state in a simple JSON file
-        const stateFilePath = path.join('/tmp', 'draft-state.json');
-        await fs.writeFile(stateFilePath, JSON.stringify(data));
+        const sql = neon(process.env.DATABASE_URL);
+        const draftId = 'main'; // Default draft ID
+        const state = data.state;
+
+        // Check if draft state exists
+        const existing = await sql`
+            SELECT id FROM draft_state WHERE draft_id = ${draftId}
+        `;
+
+        if (existing.length > 0) {
+            // Update existing record
+            await sql`
+                UPDATE draft_state SET
+                    picks = ${JSON.stringify(state.picks || [])},
+                    keepers = ${JSON.stringify(state.keepers || {})},
+                    current_pick = ${JSON.stringify(state.currentPick)},
+                    teams = ${JSON.stringify(state.teams || [])},
+                    draft_settings = ${JSON.stringify(state.draftSettings || {})},
+                    recent_pick = ${JSON.stringify(state.recentPick)},
+                    draft_completed = ${state.draftJustCompleted || false},
+                    updated_at = NOW()
+                WHERE draft_id = ${draftId}
+            `;
+        } else {
+            // Insert new record
+            await sql`
+                INSERT INTO draft_state (
+                    draft_id, 
+                    picks, 
+                    keepers, 
+                    current_pick, 
+                    teams, 
+                    draft_settings, 
+                    recent_pick, 
+                    draft_completed,
+                    updated_at
+                ) VALUES (
+                    ${draftId},
+                    ${JSON.stringify(state.picks || [])},
+                    ${JSON.stringify(state.keepers || {})},
+                    ${JSON.stringify(state.currentPick)},
+                    ${JSON.stringify(state.teams || [])},
+                    ${JSON.stringify(state.draftSettings || {})},
+                    ${JSON.stringify(state.recentPick)},
+                    ${state.draftJustCompleted || false},
+                    NOW()
+                )
+            `;
+        }
         
-        console.log('Successfully saved draft state with timestamp:', data.timestamp);
+        console.log('Successfully saved draft state to database with timestamp:', data.timestamp);
 
         return {
             statusCode: 200,
@@ -55,11 +108,11 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
-        console.error('Error updating draft state:', error);
+        console.error('Database error:', error);
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: 'Internal server error', details: error.message })
+            body: JSON.stringify({ error: 'Database error', details: error.message })
         };
     }
 };
