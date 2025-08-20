@@ -1049,12 +1049,17 @@
                 // Generate shareable URLs when state changes
                 console.log('📤 URL-based broadcasting enabled');
                 
-                // Show sharing UI immediately
-                this.showSharingUI();
+                // Show sharing UI after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    console.log('📱 Creating sharing UI...');
+                    this.showSharingUI();
+                }, 1000);
             }
 
             generateShareableURL() {
                 try {
+                    console.log('🔗 Generating shareable URL...');
+                    
                     // Create compressed state for URL sharing
                     const shareableState = {
                         picks: this.state.picks || [],
@@ -1063,9 +1068,18 @@
                         timestamp: Date.now()
                     };
                     
+                    console.log('📊 State to share:', {
+                        picksCount: shareableState.picks.length,
+                        keepersCount: Object.keys(shareableState.keepers).length,
+                        currentPick: shareableState.currentPick
+                    });
+                    
                     const stateParam = encodeURIComponent(JSON.stringify(shareableState));
                     const baseURL = window.location.origin + window.location.pathname;
                     const shareableURL = `${baseURL}?view=true&state=${stateParam}`;
+                    
+                    console.log('✅ Generated URL length:', shareableURL.length);
+                    console.log('🔗 URL preview:', shareableURL.substring(0, 100) + '...');
                     
                     // Update sharing UI
                     this.updateSharingUI(shareableURL);
@@ -1073,7 +1087,11 @@
                     return shareableURL;
                 } catch (error) {
                     console.error('❌ Error generating shareable URL:', error);
-                    return null;
+                    
+                    // Fallback: create a simple URL without state
+                    const fallbackURL = window.location.origin + window.location.pathname + '?view=true';
+                    this.updateSharingUI(fallbackURL);
+                    return fallbackURL;
                 }
             }
 
@@ -1098,11 +1116,33 @@
                 document.body.appendChild(sharingDiv);
                 
                 // Add event listeners
-                document.getElementById('copy-url').addEventListener('click', () => {
+                document.getElementById('copy-url').addEventListener('click', async () => {
                     const urlInput = document.getElementById('share-url');
-                    urlInput.select();
-                    document.execCommand('copy');
-                    showToast('Link copied to clipboard!', 'success');
+                    const url = urlInput.value;
+                    
+                    console.log('📋 Attempting to copy URL:', url);
+                    
+                    try {
+                        // Try modern clipboard API first
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(url);
+                            showToast('Link copied to clipboard!', 'success');
+                        } else {
+                            // Fallback to older method
+                            urlInput.select();
+                            urlInput.setSelectionRange(0, 99999); // For mobile devices
+                            const successful = document.execCommand('copy');
+                            if (successful) {
+                                showToast('Link copied to clipboard!', 'success');
+                            } else {
+                                throw new Error('Copy command failed');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('❌ Copy failed:', error);
+                        // Show the URL in an alert as fallback
+                        alert('Copy this link:\\n\\n' + url);
+                    }
                 });
                 
                 document.getElementById('qr-code').addEventListener('click', () => {
@@ -1114,9 +1154,13 @@
             }
 
             updateSharingUI(url) {
+                console.log('📱 Updating sharing UI with URL:', url ? url.substring(0, 100) + '...' : 'NO URL');
                 const urlInput = document.getElementById('share-url');
                 if (urlInput) {
-                    urlInput.value = url;
+                    urlInput.value = url || 'URL generation failed';
+                    console.log('✅ URL input updated');
+                } else {
+                    console.warn('❌ share-url input not found');
                 }
             }
 
