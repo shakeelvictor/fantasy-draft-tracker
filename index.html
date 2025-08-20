@@ -841,8 +841,9 @@
                 // Force save initial state to ensure persistence works
                 this.saveState();
 
-                // Setup real-time sync listener
-                this.setupRealTimeSync();
+                // TEMPORARY: Disable real-time sync to test if it's causing the disappearing issue
+                console.log('🚫 Real-time sync temporarily disabled for debugging');
+                // this.setupRealTimeSync();
             }
 
             getInitialState() {
