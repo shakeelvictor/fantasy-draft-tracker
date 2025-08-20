@@ -44,19 +44,40 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify(parsedData)
             };
         } catch (fileError) {
-            // File doesn't exist or is corrupted, return empty state
-            console.log('No existing state file, returning default state');
+            // File doesn't exist or is corrupted, return proper initial state
+            console.log('No existing state file, returning initial state');
             return {
                 statusCode: 200,
                 headers,
                 body: JSON.stringify({
                     timestamp: Date.now(),
                     state: {
+                        draftSettings: {
+                            teamCount: 11,
+                            rounds: 20,
+                            draftType: 'linear'
+                        },
+                        teams: [
+                            { id: 'team-1', name: 'Ryaan', owner: 'Ryaan', color: '#ef4444' },
+                            { id: 'team-2', name: 'Laura', owner: 'Laura', color: '#22c55e' },
+                            { id: 'team-3', name: 'Andres', owner: 'Andres', color: '#3b82f6' },
+                            { id: 'team-4', name: 'Vip', owner: 'Vip', color: '#f97316' },
+                            { id: 'team-5', name: 'Hoss', owner: 'Hoss', color: '#a855f7' },
+                            { id: 'team-6', name: 'Imran', owner: 'Imran', color: '#eab308' },
+                            { id: 'team-7', name: 'Asher', owner: 'Asher', color: '#06b6d4' },
+                            { id: 'team-8', name: 'Shak', owner: 'Shak', color: '#84cc16' },
+                            { id: 'team-9', name: 'Anand', owner: 'Anand', color: '#f59e0b' },
+                            { id: 'team-10', name: 'Dante', owner: 'Dante', color: '#8b5cf6' },
+                            { id: 'team-11', name: 'Samson', owner: 'Samson', color: '#ec4899' }
+                        ],
                         picks: [],
-                        currentPick: null,
+                        currentPick: {
+                            round: 1,
+                            pickNumber: 1,
+                            pickInRound: 1,
+                            teamId: 'team-1'
+                        },
                         keepers: {},
-                        teams: [],
-                        draftSettings: {},
                         recentPick: null,
                         draftJustCompleted: false
                     }
