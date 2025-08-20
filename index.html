@@ -992,8 +992,10 @@
                 // Listen for storage events from other tabs/windows
                 window.addEventListener('storage', (e) => {
                     if (e.key === 'fantasy-draft-sync') {
+                        console.log('📻 Received localStorage sync event:', e.key, e.newValue?.substring(0, 100));
                         const update = JSON.parse(e.newValue);
                         if (update && update.timestamp > this.state.lastUpdate) {
+                            console.log(`✅ Applying localStorage sync - picks: ${update.state?.picks?.length || 0}, timestamp: ${new Date(update.timestamp).toLocaleTimeString()}`);
                             // Update state from sync
                             this.state = {
                                 ...this.state,
@@ -1001,6 +1003,8 @@
                                 lastUpdate: update.timestamp
                             };
                             this.notify(false);
+                        } else {
+                            console.log('⏭️ Skipping localStorage sync - timestamp not newer or invalid data');
                         }
                     }
                 });
@@ -1064,6 +1068,7 @@
                         // Only update if server data is newer (allow small time difference for clock skew)
                         if (serverTimestamp > localTimestamp + 100) {
                             console.log(`✅ ${isViewOnlyMode} Updating from database - picks changed from ${this.state.picks?.length || 0} to ${data.state?.picks?.length || 0}`);
+                            console.log(`🔍 ${isViewOnlyMode} Recent pick from database:`, data.state?.recentPick);
                             
                             // Merge the server state with current state
                             const mergedState = this.mergeStates(this.state, data.state);
@@ -1073,9 +1078,10 @@
                             };
                             
                             // Notify components without broadcasting (prevent loops)
+                            console.log(`🔔 ${isViewOnlyMode} Notifying components of database update`);
                             this.notify(false);
                         } else {
-                            console.log(`⏭️ ${isViewOnlyMode} No database update needed`);
+                            console.log(`⏭️ ${isViewOnlyMode} No database update needed - serverTime: ${serverTimestamp}, localTime: ${localTimestamp}, diff: ${serverTimestamp - localTimestamp}ms`);
                         }
                     } else {
                         console.warn('⚠️ Database poll failed:', response.status);
@@ -1671,10 +1677,16 @@
             }
 
             notify(shouldBroadcast = true) {
+                console.log(`🔔 Notify called - shouldBroadcast: ${shouldBroadcast}, isViewOnly: ${this.isViewOnly}, listeners: ${this.listeners.size}`);
                 this.listeners.forEach(listener => listener(this.state));
                 this.saveState();
                 if (shouldBroadcast && !this.isViewOnly) {
+                    console.log('📢 Broadcasting update from notify method');
                     this.broadcastUpdate();
+                } else if (this.isViewOnly) {
+                    console.log('⏭️ Skipping broadcast - view-only mode');
+                } else if (!shouldBroadcast) {
+                    console.log('⏭️ Skipping broadcast - shouldBroadcast is false');
                 }
             }
 
