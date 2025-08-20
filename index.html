@@ -1010,9 +1010,7 @@
                 const isDeployed = !window.location.hostname.includes('localhost') && 
                                  !window.location.hostname.includes('127.0.0.1');
                 
-                // TEMPORARY: Disable real-time polling to test localStorage-only mode
-                console.log('🚫 Real-time polling disabled - using localStorage only');
-                if (false && (isDeployed || isViewOnly)) {
+                if (isDeployed || isViewOnly) {
                     console.log('🌐 Starting real-time polling for collaborative mode');
                     this.startPolling();
                 }
@@ -1032,6 +1030,62 @@
                         console.error('❌ Error polling for updates:', error);
                     }
                 }, 3000); // Poll every 3 seconds for better balance of responsiveness and performance
+            }
+
+            // Intelligent state merging to preserve local changes
+            mergeStates(localState, remoteState) {
+                console.log('🔄 Merging states intelligently');
+                
+                // Always preserve essential structure from local state
+                const merged = {
+                    ...localState,
+                    ...remoteState,
+                    // Always keep teams and draftSettings from local if they exist
+                    teams: localState.teams && localState.teams.length > 0 ? localState.teams : remoteState.teams,
+                    draftSettings: localState.draftSettings && Object.keys(localState.draftSettings).length > 0 
+                        ? localState.draftSettings 
+                        : remoteState.draftSettings
+                };
+
+                // Merge picks - combine both arrays and deduplicate
+                const localPicks = localState.picks || [];
+                const remotePicks = remoteState.picks || [];
+                const pickMap = new Map();
+                
+                // Add all picks to map (remote first, then local to prioritize local)
+                [...remotePicks, ...localPicks].forEach(pick => {
+                    if (pick && pick.teamId && pick.round) {
+                        const key = `${pick.teamId}-${pick.round}`;
+                        pickMap.set(key, pick);
+                    }
+                });
+                
+                merged.picks = Array.from(pickMap.values());
+
+                // Merge keepers - prioritize local keepers
+                merged.keepers = {
+                    ...(remoteState.keepers || {}),
+                    ...(localState.keepers || {})
+                };
+
+                // Use more recent currentPick
+                if (localState.currentPick && remoteState.currentPick) {
+                    // Use the one that's further in the draft
+                    const localProgress = (localState.currentPick.round - 1) * 12 + localState.currentPick.pickInRound;
+                    const remoteProgress = (remoteState.currentPick.round - 1) * 12 + remoteState.currentPick.pickInRound;
+                    merged.currentPick = localProgress >= remoteProgress ? localState.currentPick : remoteState.currentPick;
+                } else {
+                    merged.currentPick = localState.currentPick || remoteState.currentPick;
+                }
+
+                console.log('🔄 Merge result:', {
+                    picksCount: merged.picks.length,
+                    keepersCount: Object.keys(merged.keepers).length,
+                    currentPick: merged.currentPick,
+                    teamsCount: merged.teams?.length
+                });
+
+                return merged;
             }
 
             async pollFromSharedEndpoint() {
@@ -1083,10 +1137,12 @@
                         });
                         
                         if (sharedData.timestamp > (this.state.lastUpdate || 0)) {
-                            console.log('✅ Updating from shared endpoint');
+                            console.log('✅ Merging state from shared endpoint');
+                            
+                            // Intelligent merge instead of overwrite
+                            const mergedState = this.mergeStates(this.state, sharedData.state);
                             this.state = {
-                                ...this.state,
-                                ...sharedData.state,
+                                ...mergedState,
                                 lastUpdate: sharedData.timestamp
                             };
                             this.notify(false);
@@ -1549,13 +1605,7 @@
                 this.listeners.forEach(listener => listener(this.state));
                 this.saveState();
                 if (shouldBroadcast && !this.isViewOnly) {
-                    // TEMPORARY: Use localStorage broadcast only (no API calls)
-                    console.log('📢 Broadcasting via localStorage only');
-                    this.broadcastViaStorage({
-                        timestamp: Date.now(),
-                        state: this.state
-                    });
-                    // this.broadcastUpdate();
+                    this.broadcastUpdate();
                 }
             }
 
