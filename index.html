@@ -1010,183 +1010,13 @@
                 const isDeployed = !window.location.hostname.includes('localhost') && 
                                  !window.location.hostname.includes('127.0.0.1');
                 
-                // Use URL-based sharing instead of unreliable Netlify Functions
-                if (isViewOnly) {
-                    console.log('🔗 Starting URL-based state sync for view-only mode');
-                    this.loadStateFromURL();
-                } else {
-                    console.log('📤 Enabling URL-based state broadcasting');
-                    this.enableURLStateBroadcasting();
+                // Simple real-time sync for all users
+                if (isDeployed) {
+                    console.log('🌐 Starting real-time sync for collaborative mode');
+                    this.startPolling();
                 }
             }
 
-            // URL-based state sharing methods
-            loadStateFromURL() {
-                try {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const stateParam = urlParams.get('state');
-                    
-                    if (stateParam) {
-                        console.log('🔗 Loading state from URL');
-                        const decodedState = JSON.parse(decodeURIComponent(stateParam));
-                        
-                        // Merge with current state
-                        const mergedState = this.mergeStates(this.state, decodedState);
-                        this.state = mergedState;
-                        this.notify(false);
-                        
-                        console.log('✅ State loaded from URL:', {
-                            picksCount: this.state.picks?.length || 0,
-                            keepersCount: Object.keys(this.state.keepers || {}).length
-                        });
-                    }
-                } catch (error) {
-                    console.error('❌ Error loading state from URL:', error);
-                }
-            }
-
-            enableURLStateBroadcasting() {
-                // Generate shareable URLs when state changes
-                console.log('📤 URL-based broadcasting enabled');
-                
-                // Show sharing UI after a short delay to ensure DOM is ready
-                setTimeout(() => {
-                    console.log('📱 Creating sharing UI...');
-                    this.showSharingUI();
-                }, 1000);
-            }
-
-            generateShareableURL() {
-                try {
-                    console.log('🔗 Generating shareable URL...');
-                    
-                    // Create compressed state for URL sharing
-                    const shareableState = {
-                        picks: this.state.picks || [],
-                        keepers: this.state.keepers || {},
-                        currentPick: this.state.currentPick,
-                        timestamp: Date.now()
-                    };
-                    
-                    console.log('📊 State to share:', {
-                        picksCount: shareableState.picks.length,
-                        keepersCount: Object.keys(shareableState.keepers).length,
-                        currentPick: shareableState.currentPick
-                    });
-                    
-                    const stateParam = encodeURIComponent(JSON.stringify(shareableState));
-                    const baseURL = window.location.origin + window.location.pathname;
-                    const shareableURL = `${baseURL}?view=true&state=${stateParam}`;
-                    
-                    console.log('✅ Generated URL length:', shareableURL.length);
-                    console.log('🔗 URL preview:', shareableURL.substring(0, 100) + '...');
-                    
-                    // Update sharing UI
-                    this.updateSharingUI(shareableURL);
-                    
-                    return shareableURL;
-                } catch (error) {
-                    console.error('❌ Error generating shareable URL:', error);
-                    
-                    // Fallback: create a simple URL without state
-                    const fallbackURL = window.location.origin + window.location.pathname + '?view=true';
-                    this.updateSharingUI(fallbackURL);
-                    return fallbackURL;
-                }
-            }
-
-            showSharingUI() {
-                // Create sharing UI if it doesn't exist
-                if (document.getElementById('sharing-ui')) return;
-                
-                const sharingDiv = document.createElement('div');
-                sharingDiv.id = 'sharing-ui';
-                sharingDiv.className = 'fixed top-4 right-4 z-50 glass-dark rounded-lg p-4 max-w-sm';
-                sharingDiv.innerHTML = `
-                    <div class="text-sm font-semibold text-blue-400 mb-2">📱 Real-time Sharing</div>
-                    <div class="text-xs text-slate-300 mb-3">Share this link for live draft tracking:</div>
-                    <input id="share-url" class="w-full text-xs p-2 rounded bg-slate-800 text-white border border-slate-600 mb-2" readonly>
-                    <div class="flex gap-2">
-                        <button id="copy-url" class="flex-1 text-xs bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-white">Copy</button>
-                        <button id="qr-code" class="flex-1 text-xs bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-white">QR Code</button>
-                    </div>
-                    <div class="text-xs text-slate-400 mt-2">Link updates automatically with picks!</div>
-                `;
-                
-                document.body.appendChild(sharingDiv);
-                
-                // Add event listeners
-                document.getElementById('copy-url').addEventListener('click', async () => {
-                    const urlInput = document.getElementById('share-url');
-                    const url = urlInput.value;
-                    
-                    console.log('📋 Attempting to copy URL:', url);
-                    
-                    try {
-                        // Try modern clipboard API first
-                        if (navigator.clipboard && window.isSecureContext) {
-                            await navigator.clipboard.writeText(url);
-                            showToast('Link copied to clipboard!', 'success');
-                        } else {
-                            // Fallback to older method
-                            urlInput.select();
-                            urlInput.setSelectionRange(0, 99999); // For mobile devices
-                            const successful = document.execCommand('copy');
-                            if (successful) {
-                                showToast('Link copied to clipboard!', 'success');
-                            } else {
-                                throw new Error('Copy command failed');
-                            }
-                        }
-                    } catch (error) {
-                        console.error('❌ Copy failed:', error);
-                        // Show the URL in an alert as fallback
-                        alert('Copy this link:\\n\\n' + url);
-                    }
-                });
-                
-                document.getElementById('qr-code').addEventListener('click', () => {
-                    this.showQRCode();
-                });
-                
-                // Generate initial URL
-                this.generateShareableURL();
-            }
-
-            updateSharingUI(url) {
-                console.log('📱 Updating sharing UI with URL:', url ? url.substring(0, 100) + '...' : 'NO URL');
-                const urlInput = document.getElementById('share-url');
-                if (urlInput) {
-                    urlInput.value = url || 'URL generation failed';
-                    console.log('✅ URL input updated');
-                } else {
-                    console.warn('❌ share-url input not found');
-                }
-            }
-
-            showQRCode() {
-                const url = document.getElementById('share-url')?.value;
-                if (!url) return;
-                
-                // Simple QR code generation using a web service
-                const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-                
-                const qrDiv = document.createElement('div');
-                qrDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-                qrDiv.innerHTML = `
-                    <div class="glass-dark rounded-xl p-6 text-center">
-                        <h3 class="text-lg font-bold text-white mb-4">📱 Scan to View Draft</h3>
-                        <img src="${qrURL}" alt="QR Code" class="mx-auto mb-4 rounded">
-                        <button class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white">Close</button>
-                    </div>
-                `;
-                
-                qrDiv.querySelector('button').addEventListener('click', () => {
-                    qrDiv.remove();
-                });
-                
-                document.body.appendChild(qrDiv);
-            }
 
             startPolling() {
                 console.log('🔄 Starting real-time polling for collaborative mode');
@@ -1777,8 +1607,6 @@
                 this.listeners.forEach(listener => listener(this.state));
                 this.saveState();
                 if (shouldBroadcast && !this.isViewOnly) {
-                    // Generate new shareable URL with updated state
-                    this.generateShareableURL();
                     this.broadcastUpdate();
                 }
             }
