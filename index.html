@@ -1222,6 +1222,13 @@
                             lastUpdate: data.timestamp
                         };
                         
+                        // Rebuild history if we have picks but no history (for undo functionality)
+                        if (!this.isViewOnly && this.state.picks && this.state.picks.length > 0 && (!this.state.history || this.state.history.length === 0)) {
+                            console.log('🔧 Rebuilding undo history for database state with existing picks');
+                            this.state.history = this.rebuildHistoryFromPicks(this.state.picks, this.state.teams, this.state.draftSettings);
+                            this.state.currentHistoryIndex = this.state.history.length - 1;
+                        }
+                        
                         // Notify components to update UI
                         this.notify(false);
                         
@@ -1304,6 +1311,43 @@
                 }
             }
 
+            // Rebuild history from existing picks to enable undo functionality
+            rebuildHistoryFromPicks(picks, teams, draftSettings) {
+                console.log('🔧 Rebuilding history from', picks.length, 'picks');
+                const history = [];
+                
+                // Sort picks by round and pick order to ensure correct chronological order
+                const sortedPicks = [...picks].sort((a, b) => {
+                    if (a.round !== b.round) return a.round - b.round;
+                    return a.pickInRound - b.pickInRound;
+                });
+                
+                // Build history by simulating each pick
+                let currentPicks = [];
+                let currentPickState = this.calculatePickNumber(1, 1, draftSettings.teamCount);
+                
+                sortedPicks.forEach((pick, index) => {
+                    // Create a history entry for the state BEFORE this pick was made
+                    history.push({
+                        picks: [...currentPicks],
+                        currentPick: { ...currentPickState },
+                        keepers: {} // We don't have historical keeper data, so use empty object
+                    });
+                    
+                    // Add this pick to the picks array
+                    currentPicks.push(pick);
+                    
+                    // Calculate the next pick state
+                    if (index < sortedPicks.length - 1) {
+                        const nextPick = sortedPicks[index + 1];
+                        currentPickState = this.calculatePickNumber(nextPick.round, nextPick.pickInRound, draftSettings.teamCount);
+                    }
+                });
+                
+                console.log('🔧 Rebuilt history with', history.length, 'entries');
+                return history;
+            }
+
             // Intelligent state merging to preserve local changes
             mergeStates(localState, remoteState) {
                 console.log('🔄 Merging states intelligently');
@@ -1344,6 +1388,20 @@
                     });
                     
                     merged.picks = Array.from(pickMap.values());
+                    
+                    // Always preserve local history and currentHistoryIndex for interactive users
+                    // This ensures undo functionality remains available regardless of sync operations
+                    merged.history = localState.history || [];
+                    merged.currentHistoryIndex = localState.currentHistoryIndex >= 0 ? localState.currentHistoryIndex : -1;
+                    
+                    // If we have picks but no history, rebuild the history to enable undo functionality
+                    if (merged.picks.length > 0 && merged.history.length === 0) {
+                        console.log('🔧 Rebuilding undo history for existing picks');
+                        merged.history = this.rebuildHistoryFromPicks(merged.picks, merged.teams, merged.draftSettings);
+                        merged.currentHistoryIndex = merged.history.length - 1;
+                    }
+                    
+                    console.log('🔄 Preserving local undo history in interactive mode - historyLength:', merged.history.length, 'currentIndex:', merged.currentHistoryIndex);
                 }
 
                 // Only merge keepers and currentPick if not in view-only mode
@@ -1377,12 +1435,6 @@
                     } else {
                         merged.currentPick = localState.currentPick || remoteState.currentPick;
                     }
-
-                    // Preserve local history and currentHistoryIndex to maintain undo functionality
-                    // This ensures each user maintains their own undo history even during state sync
-                    merged.history = localState.history || [];
-                    merged.currentHistoryIndex = localState.currentHistoryIndex >= 0 ? localState.currentHistoryIndex : -1;
-                    console.log('🔄 Preserving local undo history - historyLength:', merged.history.length, 'currentIndex:', merged.currentHistoryIndex);
                 }
 
                 console.log('🔄 Merge result:', {
@@ -1709,6 +1761,13 @@
 
                         // Debug: Log loaded state after validation
                         console.log('State after validation:', { keepers: loadedState.keepers });
+
+                        // Rebuild history if we have picks but no history (for undo functionality)
+                        if (loadedState.picks && loadedState.picks.length > 0 && (!loadedState.history || loadedState.history.length === 0)) {
+                            console.log('🔧 Rebuilding undo history for loaded state with existing picks');
+                            loadedState.history = this.rebuildHistoryFromPicks(loadedState.picks, loadedState.teams, loadedState.draftSettings);
+                            loadedState.currentHistoryIndex = loadedState.history.length - 1;
+                        }
 
                         return loadedState;
                     }
