@@ -1377,6 +1377,12 @@
                     } else {
                         merged.currentPick = localState.currentPick || remoteState.currentPick;
                     }
+
+                    // Preserve local history and currentHistoryIndex to maintain undo functionality
+                    // This ensures each user maintains their own undo history even during state sync
+                    merged.history = localState.history || [];
+                    merged.currentHistoryIndex = localState.currentHistoryIndex >= 0 ? localState.currentHistoryIndex : -1;
+                    console.log('🔄 Preserving local undo history - historyLength:', merged.history.length, 'currentIndex:', merged.currentHistoryIndex);
                 }
 
                 console.log('🔄 Merge result:', {
