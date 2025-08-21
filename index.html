@@ -893,10 +893,8 @@
                 // Setup real-time sync listener
                 this.setupRealTimeSync();
                 
-                // If in view-only mode, immediately load state from database
-                if (this.isViewOnly) {
-                    this.loadInitialStateFromDatabase();
-                }
+                // Load initial state from database for all users to get keepers and other data
+                this.loadInitialStateFromDatabase();
 
                 // Load archives from database for persistence across sessions
                 this.loadArchivesFromDatabase();
@@ -1178,7 +1176,8 @@
             }
 
             async loadInitialStateFromDatabase() {
-                console.log('🔄 [VIEW-ONLY] Loading initial state from database...');
+                const mode = this.isViewOnly ? '[VIEW-ONLY]' : '[INTERACTIVE]';
+                console.log(`🔄 ${mode} Loading initial state from database...`);
                 try {
                     const response = await fetch('/api/draft-state', {
                         method: 'GET',
@@ -1191,16 +1190,34 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        console.log('✅ [VIEW-ONLY] Loaded database state:', {
+                        console.log(`✅ ${mode} Loaded database state:`, {
                             picks: data.state?.picks?.length || 0,
+                            keepers: Object.keys(data.state?.keepers || {}).length,
                             teams: data.state?.teams?.length || 0,
                             timestamp: new Date(data.timestamp).toLocaleTimeString()
                         });
                         
-                        // Replace current state with database state, preserving playersData
+                        // Intelligently merge database state with existing state
+                        const currentKeepers = this.state.keepers || {};
+                        const databaseKeepers = data.state?.keepers || {};
+                        const hasLocalKeepers = Object.keys(currentKeepers).length > 0;
+                        const hasDatabaseKeepers = Object.keys(databaseKeepers).length > 0;
+                        
+                        // Use database keepers if local storage is empty but database has keepers
+                        const keepersToUse = hasLocalKeepers ? currentKeepers : 
+                                           (hasDatabaseKeepers ? databaseKeepers : {});
+                        
+                        console.log(`🔄 ${mode} Keeper merge decision:`, {
+                            hasLocalKeepers,
+                            hasDatabaseKeepers,
+                            usingSource: hasLocalKeepers ? 'local' : (hasDatabaseKeepers ? 'database' : 'none'),
+                            keepersCount: Object.keys(keepersToUse).length
+                        });
+
                         this.state = {
                             ...this.getInitialState(), // Start with defaults
                             ...data.state, // Override with database state
+                            keepers: keepersToUse, // Use intelligent keeper selection
                             playersData: this.state.playersData || {}, // Preserve existing player data
                             lastUpdate: data.timestamp
                         };
@@ -1208,14 +1225,14 @@
                         // Notify components to update UI
                         this.notify(false);
                         
-                        // Also load player data for view-only mode
-                        console.log('🔄 [VIEW-ONLY] Loading player data...');
+                        // Also load player data
+                        console.log(`🔄 ${mode} Loading player data...`);
                         await this.loadPlayersData();
                     } else {
-                        console.warn('⚠️ [VIEW-ONLY] Failed to load from database:', response.status);
+                        console.warn(`⚠️ ${mode} Failed to load from database:`, response.status);
                     }
                 } catch (error) {
-                    console.error('🚨 [VIEW-ONLY] Error loading initial state:', error);
+                    console.error(`🚨 ${mode} Error loading initial state:`, error);
                 }
             }
 
@@ -1331,11 +1348,25 @@
 
                 // Only merge keepers and currentPick if not in view-only mode
                 if (!this.isViewOnly) {
-                    // Merge keepers - prioritize local keepers
-                    merged.keepers = {
-                        ...(remoteState.keepers || {}),
-                        ...(localState.keepers || {})
-                    };
+                    // Merge keepers intelligently - use database if local is empty, otherwise prefer local
+                    const localKeepers = localState.keepers || {};
+                    const remoteKeepers = remoteState.keepers || {};
+                    const hasLocalKeepers = Object.keys(localKeepers).length > 0;
+                    const hasRemoteKeepers = Object.keys(remoteKeepers).length > 0;
+                    
+                    if (hasLocalKeepers) {
+                        // Prefer local keepers (user has made recent changes)
+                        merged.keepers = { ...remoteKeepers, ...localKeepers };
+                        console.log('🔄 Using local keepers (recent changes detected)');
+                    } else if (hasRemoteKeepers) {
+                        // Use database keepers (local storage was cleared)
+                        merged.keepers = remoteKeepers;
+                        console.log('🔄 Using database keepers (local storage empty)');
+                    } else {
+                        // No keepers anywhere
+                        merged.keepers = {};
+                        console.log('🔄 No keepers found in local or remote state');
+                    }
 
                     // Use more recent currentPick
                     if (localState.currentPick && remoteState.currentPick) {
