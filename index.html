@@ -3627,7 +3627,7 @@
             // Initialize rankings when the script loads
             initializeRankingsFromJSON().then(() => {
                 // Trigger a re-render of player list after rankings are loaded
-                if (window.React && window.forcePlayerListUpdate) {
+                if (window.forcePlayerListUpdate) {
                     window.forcePlayerListUpdate();
                 }
             });
@@ -4817,6 +4817,18 @@
                 const playersArray = Object.values(playersData || {});
                 console.log('PlayerList - playersArray length:', playersArray.length);
                 const draftedPlayerIds = new Set(picks.map(pick => pick.playerId));
+                
+                // Get all keeper player IDs to exclude from available players
+                const keeperPlayerIds = new Set();
+                Object.values(keepers || {}).forEach(teamKeepers => {
+                    if (Array.isArray(teamKeepers)) {
+                        teamKeepers.forEach(keeper => {
+                            if (keeper && keeper.playerId) {
+                                keeperPlayerIds.add(keeper.playerId);
+                            }
+                        });
+                    }
+                });
 
                 // Define offensive line positions to filter out
                 const offensiveLinePositions = ['C', 'G', 'T', 'OL', 'LG', 'RG', 'LT', 'RT', 'OT', 'OG'];
@@ -4827,6 +4839,11 @@
                         
                         // Filter out offensive line players
                         if (offensiveLinePositions.includes(player.position)) {
+                            return false;
+                        }
+                        
+                        // Filter out keepers - they should not be available to draft
+                        if (keeperPlayerIds.has(player.player_id)) {
                             return false;
                         }
                         
@@ -4914,7 +4931,7 @@
 
                 console.log('PlayerList - filtered players count:', result.length);
                 return result;
-            }, [playersData, selectedPosition, searchQuery, showAvailableOnly, picks, rankingsLoaded]);
+            }, [playersData, selectedPosition, searchQuery, showAvailableOnly, picks, keepers, rankingsLoaded]);
 
             const getPositionClass = (position) => {
                 const positionMap = {
