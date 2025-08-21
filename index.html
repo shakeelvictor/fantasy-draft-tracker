@@ -1958,6 +1958,14 @@
                         recentPick: recentPickWithTeam,
                         draftJustCompleted: isFinalPick
                     });
+
+                    // Automatically archive the draft when completed
+                    if (isFinalPick) {
+                        console.log('🏆 Draft completed! Auto-archiving...');
+                        setTimeout(() => {
+                            this.archiveDraft();
+                        }, 2000); // Wait 2 seconds to allow completion overlay to show
+                    }
                 } else {
                     const trimmedHistory = newHistory.slice(-50);
                     this.setState({
@@ -1968,6 +1976,14 @@
                         recentPick: recentPickWithTeam,
                         draftJustCompleted: isFinalPick
                     });
+
+                    // Automatically archive the draft when completed
+                    if (isFinalPick) {
+                        console.log('🏆 Draft completed! Auto-archiving...');
+                        setTimeout(() => {
+                            this.archiveDraft();
+                        }, 2000); // Wait 2 seconds to allow completion overlay to show
+                    }
                 }
             }
             undoPick() {
@@ -2094,20 +2110,27 @@
             }
 
             exportToExcel() {
+                console.log('📊 Starting Excel export...');
                 const { draftSettings, teams, picks, playersData, keepers } = this.state;
 
-                // Create workbook
-                const wb = XLSX.utils.book_new();
+                try {
+                    // Validate XLSX library is available
+                    if (typeof XLSX === 'undefined') {
+                        throw new Error('XLSX library not loaded');
+                    }
 
-                // Draft Summary Sheet
-                const summaryData = [
-                    ['Draft Summary'],
-                    ['League Name', draftSettings.leagueName],
-                    ['Date', new Date().toLocaleDateString()],
-                    ['Teams', draftSettings.teamCount],
-                    ['Rounds', draftSettings.rounds],
-                    ['Total Picks', picks.length]
-                ];
+                    // Create workbook
+                    const wb = XLSX.utils.book_new();
+
+                    // Draft Summary Sheet with fallbacks for undefined values
+                    const summaryData = [
+                        ['Draft Summary'],
+                        ['League Name', draftSettings?.leagueName || 'Fantasy Draft'],
+                        ['Date', new Date().toLocaleDateString()],
+                        ['Teams', draftSettings?.teamCount || teams?.length || 0],
+                        ['Rounds', draftSettings?.rounds || 20],
+                        ['Total Picks', picks?.length || 0]
+                    ];
                 const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
                 XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
 
@@ -2223,11 +2246,21 @@
                 const ws3 = XLSX.utils.aoa_to_sheet(rosterData);
                 XLSX.utils.book_append_sheet(wb, ws3, 'Team Rosters');
 
-                // Export file
-                const fileName = `${draftSettings.leagueName.replace(/[^a-z0-9]/gi, '_')}_draft_${new Date().getTime()}.xlsx`;
-                XLSX.writeFile(wb, fileName);
+                    // Export file with safe filename
+                    const leagueName = draftSettings?.leagueName || 'Fantasy_Draft';
+                    const safeName = leagueName.replace(/[^a-z0-9]/gi, '_');
+                    const fileName = `${safeName}_draft_${new Date().getTime()}.xlsx`;
+                    
+                    console.log('📊 Exporting file:', fileName);
+                    XLSX.writeFile(wb, fileName);
 
-                showToast('Draft exported to Excel successfully', 'success');
+                    showToast('Draft exported to Excel successfully', 'success');
+                    console.log('✅ Excel export completed successfully');
+
+                } catch (error) {
+                    console.error('❌ Excel export failed:', error);
+                    showToast(`Export failed: ${error.message}`, 'error');
+                }
             }
 
         }
