@@ -3197,7 +3197,7 @@
 
             // Check if this player is already drafted
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-            const canDraft = currentPick && !isDrafted && !isViewOnly && !isPlayerKeeper(player);
+            const canDraft = currentPick && !isDrafted && !isViewOnly && !window.isPlayerKeeper(player, keepers);
 
             useEffect(() => {
                 const fetchFantasyProData = async () => {
@@ -3674,8 +3674,40 @@
                 return generatePositionBasedRanking(player);
             };
 
-            // Make the function globally accessible for React components
+            // Check if a player is a keeper for any team
+            const isPlayerKeeper = (player, keepersData) => {
+                const playerIds = [player.player_id, player.id, player.playerId].filter(Boolean);
+                const playerFullName = `${player.first_name || ''} ${player.last_name || ''}`.toLowerCase().trim();
+                
+                return Object.values(keepersData || {}).some(teamKeepers => {
+                    if (Array.isArray(teamKeepers)) {
+                        return teamKeepers.some(keeper => {
+                            if (!keeper) return false;
+                            
+                            // Check ID matches
+                            const keeperIds = [keeper.playerId, keeper.player_id, keeper.id].filter(Boolean);
+                            if (playerIds.some(playerId => keeperIds.includes(playerId))) {
+                                return true;
+                            }
+                            
+                            // Check name matches
+                            let keeperName = '';
+                            if (keeper.first_name && keeper.last_name) {
+                                keeperName = `${keeper.first_name} ${keeper.last_name}`.toLowerCase().trim();
+                            } else if (keeper.name) {
+                                keeperName = keeper.name.toLowerCase().trim();
+                            }
+                            
+                            return keeperName && keeperName === playerFullName;
+                        });
+                    }
+                    return false;
+                });
+            };
+
+            // Make the functions globally accessible for React components
             window.getAccuratePlayerRankings = getAccuratePlayerRankings;
+            window.isPlayerKeeper = isPlayerKeeper;
             
             // Extract position rank from position string (e.g., "WR1" -> 1)
             const extractPositionRank = (positionString) => {
@@ -4127,7 +4159,7 @@
                 console.log('⚡ Draft button clicked for:', `${player.first_name} ${player.last_name}`);
                 
                 // Check if player is a keeper
-                if (isPlayerKeeper(player)) {
+                if (window.isPlayerKeeper(player, keepers)) {
                     console.error('❌ Cannot draft: Player is a keeper');
                     alert('This player is a keeper and cannot be drafted.');
                     return;
@@ -4416,7 +4448,7 @@
                                             type="button"
                                             disabled={!canDraft}
                                         >
-                                            {isDrafted ? 'Already Drafted' : isPlayerKeeper(player) ? 'Keeper - Cannot Draft' : isViewOnly ? 'View Only' : !currentPick ? 'No Active Pick' : 'Draft Player'}
+                                            {isDrafted ? 'Already Drafted' : window.isPlayerKeeper(player, keepers) ? 'Keeper - Cannot Draft' : isViewOnly ? 'View Only' : !currentPick ? 'No Active Pick' : 'Draft Player'}
                                         </button>
                                     </div>
                                 </div>
@@ -4992,40 +5024,10 @@
                 return positionMap[position] || 'position-idp';
             };
 
-            // Check if a player is a keeper for any team
-            const isPlayerKeeper = (player) => {
-                const playerIds = [player.player_id, player.id, player.playerId].filter(Boolean);
-                const playerFullName = `${player.first_name || ''} ${player.last_name || ''}`.toLowerCase().trim();
-                
-                return Object.values(keepers || {}).some(teamKeepers => {
-                    if (Array.isArray(teamKeepers)) {
-                        return teamKeepers.some(keeper => {
-                            if (!keeper) return false;
-                            
-                            // Check ID matches
-                            const keeperIds = [keeper.playerId, keeper.player_id, keeper.id].filter(Boolean);
-                            if (playerIds.some(playerId => keeperIds.includes(playerId))) {
-                                return true;
-                            }
-                            
-                            // Check name matches
-                            let keeperName = '';
-                            if (keeper.first_name && keeper.last_name) {
-                                keeperName = `${keeper.first_name} ${keeper.last_name}`.toLowerCase().trim();
-                            } else if (keeper.name) {
-                                keeperName = keeper.name.toLowerCase().trim();
-                            }
-                            
-                            return keeperName && keeperName === playerFullName;
-                        });
-                    }
-                    return false;
-                });
-            };
 
             const handlePlayerSelect = (player) => {
                 // Don't allow selection of keeper players
-                if (isPlayerKeeper(player)) {
+                if (window.isPlayerKeeper(player, keepers)) {
                     console.log('Cannot select keeper player:', player.first_name, player.last_name);
                     return;
                 }
@@ -5166,7 +5168,7 @@
                                 {filteredPlayers.length > 0 ? (
                                     filteredPlayers.map(player => {
                                         const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-                                        const isKeeper = isPlayerKeeper(player);
+                                        const isKeeper = window.isPlayerKeeper(player, keepers);
                                         const fullName = `${player.first_name || ''} ${player.last_name || ''}`;
 
                                         return (
@@ -5317,7 +5319,7 @@
                                 {filteredPlayers.length > 0 ? (
                                     filteredPlayers.map(player => {
                                         const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-                                        const isKeeper = isPlayerKeeper(player);
+                                        const isKeeper = window.isPlayerKeeper(player, keepers);
                                         const fullName = `${player.first_name || ''} ${player.last_name || ''}`;
 
                                         return (
