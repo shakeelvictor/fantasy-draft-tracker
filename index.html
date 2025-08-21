@@ -849,6 +849,9 @@
                 if (this.isViewOnly) {
                     this.loadInitialStateFromDatabase();
                 }
+
+                // Load archives from database for persistence across sessions
+                this.loadArchivesFromDatabase();
             }
 
             getInitialState() {
@@ -1146,6 +1149,74 @@
                     }
                 } catch (error) {
                     console.error('🚨 [VIEW-ONLY] Error loading initial state:', error);
+                }
+            }
+
+            async loadArchivesFromDatabase() {
+                console.log('📂 Loading archives from database...');
+                try {
+                    const response = await fetch('/api/load-archives', {
+                        method: 'GET',
+                        cache: 'no-cache',
+                        headers: { 
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const databaseArchives = data.archives || [];
+                        
+                        console.log(`✅ Loaded ${databaseArchives.length} archives from database`);
+                        
+                        // Merge with local archives (database takes precedence)
+                        const localArchives = this.state.archivedDrafts || [];
+                        
+                        // Create a map of database archives for quick lookup
+                        const dbArchiveMap = new Map(databaseArchives.map(archive => [archive.id, archive]));
+                        
+                        // Start with database archives, then add local ones that aren't in database
+                        const mergedArchives = [...databaseArchives];
+                        localArchives.forEach(localArchive => {
+                            if (!dbArchiveMap.has(localArchive.id)) {
+                                mergedArchives.push(localArchive);
+                                // Save this local archive to database
+                                this.saveArchiveToDatabase(localArchive);
+                            }
+                        });
+                        
+                        // Sort by date (newest first)
+                        mergedArchives.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        
+                        this.setState({ archivedDrafts: mergedArchives });
+                        
+                        // Update localStorage with merged archives
+                        localStorage.setItem('fantasy-draft-archives', JSON.stringify(mergedArchives));
+                        
+                    } else {
+                        console.warn('⚠️ Failed to load archives from database, using local only');
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading archives from database:', error);
+                }
+            }
+
+            async saveArchiveToDatabase(archive) {
+                try {
+                    const response = await fetch('/api/save-archive', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ archive })
+                    });
+                    
+                    if (response.ok) {
+                        console.log(`✅ Saved local archive ${archive.id} to database`);
+                    }
+                } catch (error) {
+                    console.error('❌ Error saving local archive to database:', error);
                 }
             }
 
@@ -2056,12 +2127,12 @@
                 this.isViewOnly = isViewOnly;
             }
 
-            archiveDraft() {
+            async archiveDraft() {
                 const { draftSettings, teams, picks, playersData } = this.state;
 
                 const draftArchive = {
                     id: `draft-${Date.now()}`,
-                    name: `${draftSettings.leagueName} - ${new Date().toLocaleDateString()}`,
+                    name: `${draftSettings?.leagueName || 'Fantasy Draft'} - ${new Date().toLocaleDateString()}`,
                     date: new Date().toISOString(),
                     settings: draftSettings,
                     teams: teams,
@@ -2077,10 +2148,32 @@
                     currentDraftId: draftArchive.id
                 });
 
-                // Explicitly save archives to localStorage
+                // Save to localStorage for immediate access
                 localStorage.setItem('fantasy-draft-archives', JSON.stringify(newArchives));
 
-                showToast('Draft archived successfully', 'success');
+                // Save to database for persistence across sessions
+                try {
+                    console.log('💾 Saving archive to database...');
+                    const response = await fetch('/api/save-archive', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ archive: draftArchive })
+                    });
+
+                    if (response.ok) {
+                        console.log('✅ Archive saved to database successfully');
+                        showToast('Draft archived and saved to database', 'success');
+                    } else {
+                        console.warn('⚠️ Failed to save archive to database, but saved locally');
+                        showToast('Draft archived locally (database save failed)', 'warning');
+                    }
+                } catch (error) {
+                    console.error('❌ Error saving archive to database:', error);
+                    showToast('Draft archived locally (database unavailable)', 'warning');
+                }
+
                 return draftArchive;
             }
 
@@ -3703,19 +3796,6 @@
                                     <button
                                         onClick={() => {
                                             handleClose();
-                                            setTimeout(archiveDraft, 350);
-                                        }}
-                                        className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium flex items-center justify-center space-x-2"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
-                                        </svg>
-                                        <span>Save Draft</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            handleClose();
                                             setTimeout(exportToExcel, 350);
                                         }}
                                         className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium flex items-center justify-center space-x-2"
@@ -3844,17 +3924,6 @@
 
                     {isDraftComplete && (
                         <>
-                            <button
-                                onClick={archiveDraft}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white transition-all flex items-center space-x-2 font-medium hover:shadow-lg transform hover:scale-105"
-                                title="Save Draft"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
-                                </svg>
-                                <span className="hidden sm:inline text-sm">Save</span>
-                            </button>
-
                             <button
                                 onClick={exportToExcel}
                                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white transition-all flex items-center space-x-2 font-medium hover:shadow-lg transform hover:scale-105"
