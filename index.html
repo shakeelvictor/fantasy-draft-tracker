@@ -3668,6 +3668,9 @@
                 // Fallback to position-based estimates for unlisted players
                 return generatePositionBasedRanking(player);
             };
+
+            // Make the function globally accessible for React components
+            window.getAccuratePlayerRankings = getAccuratePlayerRankings;
             
             // Extract position rank from position string (e.g., "WR1" -> 1)
             const extractPositionRank = (positionString) => {
@@ -4847,23 +4850,26 @@
                             return (a.position || '').localeCompare(b.position || '');
                         }
                         
-                        // Simple ranking-based sorting using basic position hierarchy
-                        const getPositionRank = (pos) => {
-                            const positionRanks = {
-                                'QB': 1, 'RB': 2, 'WR': 3, 'TE': 4, 'K': 5, 'DEF': 6,
-                                'DT': 7, 'DE': 8, 'LB': 9, 'CB': 10, 'S': 11
-                            };
-                            return positionRanks[pos] || 999;
-                        };
+                        // Use actual fantasy rankings for sorting
+                        let aRank = 999, bRank = 999;
                         
-                        const aRank = getPositionRank(a.position);
-                        const bRank = getPositionRank(b.position);
+                        try {
+                            if (window.getAccuratePlayerRankings) {
+                                const aRanking = window.getAccuratePlayerRankings(a);
+                                const bRanking = window.getAccuratePlayerRankings(b);
+                                aRank = aRanking.overall || 999;
+                                bRank = bRanking.overall || 999;
+                            }
+                        } catch (error) {
+                            console.warn('Error getting player rankings:', error);
+                        }
                         
+                        // Sort by ranking (lower rank number = higher priority)
                         if (aRank !== bRank) {
                             return aRank - bRank;
                         }
                         
-                        // Within same position, sort alphabetically for now
+                        // Fallback to alphabetical if ranks are the same
                         const aName = `${a.first_name || ''} ${a.last_name || ''}`;
                         const bName = `${b.first_name || ''} ${b.last_name || ''}`;
                         return aName.localeCompare(bName);
