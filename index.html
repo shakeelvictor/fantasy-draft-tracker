@@ -3147,94 +3147,268 @@
                 const playerName = `${player.first_name} ${player.last_name}`;
                 const newsResults = [];
                 
-                // Try multiple news sources in parallel for best coverage
-                const newsSources = [
-                    fetchESPNNews(player),
-                    fetchNFLNews(player), 
-                    fetchRedditNews(player),
-                    fetchTwitterNews(player)
-                ];
+                console.log(`📰 Fetching latest news for ${playerName}...`);
                 
-                const results = await Promise.allSettled(newsSources);
-                
-                results.forEach((result, index) => {
-                    if (result.status === 'fulfilled' && result.value) {
-                        newsResults.push(...result.value);
+                // Try multiple reliable news sources for real NFL player news
+                try {
+                    // ESPN Fantasy News
+                    const espnNews = await fetchESPNPlayerNews(player);
+                    if (espnNews.length > 0) {
+                        newsResults.push(...espnNews);
+                        console.log(`✅ Got ${espnNews.length} ESPN news items`);
                     }
-                });
+                    
+                    // NFL.com Player News
+                    const nflNews = await fetchNFLPlayerNews(player);
+                    if (nflNews.length > 0) {
+                        newsResults.push(...nflNews);
+                        console.log(`✅ Got ${nflNews.length} NFL.com news items`);
+                    }
+                    
+                    // Fantasy Football Subreddit
+                    const redditNews = await fetchFantasyFootballReddit(player);
+                    if (redditNews.length > 0) {
+                        newsResults.push(...redditNews);
+                        console.log(`✅ Got ${redditNews.length} Reddit news items`);
+                    }
+                    
+                    // FantasyPros News (if available)
+                    const fpNews = await fetchFantasyProsNews(player);
+                    if (fpNews.length > 0) {
+                        newsResults.push(...fpNews);
+                        console.log(`✅ Got ${fpNews.length} FantasyPros news items`);
+                    }
+                    
+                } catch (error) {
+                    console.error(`❌ Error fetching news for ${playerName}:`, error);
+                }
                 
-                return newsResults.slice(0, 3); // Return top 3 news items
+                // Sort by date/relevance and return top 4
+                return newsResults
+                    .filter(item => item && item.trim().length > 10)
+                    .slice(0, 4);
             };
 
-            const fetchESPNNews = async (player) => {
+            const fetchESPNPlayerNews = async (player) => {
                 try {
-                    const corsProxy = 'https://corsproxy.io/?';
                     const playerName = `${player.first_name} ${player.last_name}`;
-                    const searchUrl = `${corsProxy}https://www.espn.com/search/results?q=${encodeURIComponent(playerName + ' fantasy football news')}`;
+                    console.log(`📺 Fetching ESPN news for ${playerName}...`);
                     
-                    const response = await fetch(searchUrl);
-                    const html = await response.text();
+                    // Use ESPN's fantasy API endpoint
+                    const corsProxy = 'https://api.allorigins.win/get?url=';
+                    const espnUrl = `https://www.espn.com/fantasy/football/story/_/id/${player.player_id}/news`;
+                    const searchUrl = `${corsProxy}${encodeURIComponent(espnUrl)}`;
                     
-                    // Simple HTML parsing for news headlines
-                    const headlines = extractHeadlines(html, playerName);
-                    return headlines.map(h => `ESPN: ${h}`);
+                    const response = await fetch(searchUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (compatible; FantasyApp/1.0)'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`ESPN API returned ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    const html = data.contents;
+                    
+                    // Extract news headlines from ESPN fantasy section
+                    const newsItems = extractESPNFantasyNews(html, playerName);
+                    return newsItems.slice(0, 2); // Top 2 ESPN items
+                    
                 } catch (error) {
-                    console.log('ESPN news fetch failed:', error.message);
+                    console.log(`❌ ESPN news fetch failed for ${player.first_name} ${player.last_name}:`, error.message);
                     return [];
                 }
             };
 
-            const fetchNFLNews = async (player) => {
+            const fetchNFLPlayerNews = async (player) => {
                 try {
-                    const corsProxy = 'https://corsproxy.io/?';
                     const playerName = `${player.first_name} ${player.last_name}`;
-                    const searchUrl = `${corsProxy}https://www.nfl.com/search?q=${encodeURIComponent(playerName)}`;
+                    console.log(`🏈 Fetching NFL.com news for ${playerName}...`);
+                    
+                    // Use NFL.com player news API
+                    const corsProxy = 'https://api.allorigins.win/get?url=';
+                    const nflUrl = `https://www.nfl.com/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}/news/`;
+                    const searchUrl = `${corsProxy}${encodeURIComponent(nflUrl)}`;
                     
                     const response = await fetch(searchUrl);
-                    const html = await response.text();
                     
-                    const headlines = extractHeadlines(html, playerName);
-                    return headlines.map(h => `NFL.com: ${h}`);
+                    if (!response.ok) {
+                        throw new Error(`NFL.com returned ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    const html = data.contents;
+                    
+                    // Extract player-specific news from NFL.com
+                    const newsItems = extractNFLPlayerNews(html, playerName);
+                    return newsItems.slice(0, 2); // Top 2 NFL items
+                    
                 } catch (error) {
-                    console.log('NFL news fetch failed:', error.message);
+                    console.log(`❌ NFL.com news fetch failed for ${player.first_name} ${player.last_name}:`, error.message);
                     return [];
                 }
             };
 
-            const fetchRedditNews = async (player) => {
+            const fetchFantasyFootballReddit = async (player) => {
                 try {
                     const playerName = `${player.first_name} ${player.last_name}`;
-                    const searchUrl = `https://www.reddit.com/r/fantasyfootball/search.json?q=${encodeURIComponent(playerName)}&restrict_sr=1&sort=new&limit=5`;
+                    console.log(`🔴 Fetching r/fantasyfootball news for ${playerName}...`);
                     
-                    const response = await fetch(searchUrl);
+                    // Search r/fantasyfootball for recent player discussions
+                    const searchUrl = `https://www.reddit.com/r/fantasyfootball/search.json?q=${encodeURIComponent(playerName)}&restrict_sr=1&sort=new&limit=10&t=week`;
+                    
+                    const response = await fetch(searchUrl, {
+                        headers: {
+                            'User-Agent': 'FantasyDraftTracker/1.0'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Reddit API returned ${response.status}`);
+                    }
+                    
                     const data = await response.json();
                     
-                    if (data.data && data.data.children) {
+                    if (data.data && data.data.children && data.data.children.length > 0) {
                         return data.data.children
-                            .map(post => `Reddit: ${post.data.title}`)
+                            .filter(post => {
+                                const title = post.data.title.toLowerCase();
+                                const name = playerName.toLowerCase();
+                                return title.includes(name) && (title.includes('news') || title.includes('update') || title.includes('injury') || title.includes('week'));
+                            })
+                            .map(post => `🔴 r/FF: ${post.data.title}`)
                             .slice(0, 2);
                     }
                     return [];
                 } catch (error) {
-                    console.log('Reddit news fetch failed:', error.message);
+                    console.log(`❌ Reddit news fetch failed for ${player.first_name} ${player.last_name}:`, error.message);
                     return [];
                 }
             };
 
-            const fetchTwitterNews = async (player) => {
-                // Twitter/X API requires authentication, so we'll skip this for now
-                // Could implement if we have API access
-                return [];
+            const fetchFantasyProsNews = async (player) => {
+                try {
+                    const playerName = `${player.first_name} ${player.last_name}`;
+                    console.log(`📊 Fetching FantasyPros news for ${playerName}...`);
+                    
+                    // Try to get FantasyPros player news through their public RSS/search
+                    const corsProxy = 'https://api.allorigins.win/get?url=';
+                    const fpUrl = `https://www.fantasypros.com/nfl/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}.php`;
+                    const searchUrl = `${corsProxy}${encodeURIComponent(fpUrl)}`;
+                    
+                    const response = await fetch(searchUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`FantasyPros returned ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    const html = data.contents;
+                    
+                    // Extract any recent news/updates from FantasyPros player page
+                    const newsItems = extractFantasyProsNews(html, playerName);
+                    return newsItems.slice(0, 2); // Top 2 FP items
+                    
+                } catch (error) {
+                    console.log(`❌ FantasyPros news fetch failed for ${player.first_name} ${player.last_name}:`, error.message);
+                    return [];
+                }
+            };
+
+            const extractESPNFantasyNews = (html, playerName) => {
+                try {
+                    const newsItems = [];
+                    const lowerPlayerName = playerName.toLowerCase();
+                    
+                    // Look for ESPN fantasy news patterns
+                    const newsPatterns = [
+                        /<h3[^>]*>([^<]*${lowerPlayerName}[^<]*)<\/h3>/gi,
+                        /<p[^>]*>([^<]*${lowerPlayerName}[^<]*injury[^<]*)<\/p>/gi,
+                        /<p[^>]*>([^<]*${lowerPlayerName}[^<]*update[^<]*)<\/p>/gi
+                    ];
+                    
+                    newsPatterns.forEach(pattern => {
+                        const matches = html.matchAll(pattern);
+                        for (const match of matches) {
+                            if (match[1] && match[1].trim().length > 20) {
+                                newsItems.push(`📺 ESPN: ${match[1].trim()}`);
+                            }
+                        }
+                    });
+                    
+                    return newsItems.slice(0, 2);
+                } catch (error) {
+                    console.error('ESPN news extraction failed:', error);
+                    return [];
+                }
+            };
+
+            const extractNFLPlayerNews = (html, playerName) => {
+                try {
+                    const newsItems = [];
+                    const lowerPlayerName = playerName.toLowerCase();
+                    
+                    // Look for NFL.com news patterns
+                    const newsPatterns = [
+                        /<h2[^>]*>([^<]*${lowerPlayerName}[^<]*)<\/h2>/gi,
+                        /<h3[^>]*>([^<]*${lowerPlayerName}[^<]*)<\/h3>/gi,
+                        /<p[^>]*class="[^"]*news[^"]*"[^>]*>([^<]*${lowerPlayerName}[^<]*)<\/p>/gi
+                    ];
+                    
+                    newsPatterns.forEach(pattern => {
+                        const matches = html.matchAll(pattern);
+                        for (const match of matches) {
+                            if (match[1] && match[1].trim().length > 15) {
+                                newsItems.push(`🏈 NFL.com: ${match[1].trim()}`);
+                            }
+                        }
+                    });
+                    
+                    return newsItems.slice(0, 2);
+                } catch (error) {
+                    console.error('NFL news extraction failed:', error);
+                    return [];
+                }
+            };
+
+            const extractFantasyProsNews = (html, playerName) => {
+                try {
+                    const newsItems = [];
+                    const lowerPlayerName = playerName.toLowerCase();
+                    
+                    // Look for FantasyPros news/analysis patterns
+                    const newsPatterns = [
+                        /<div[^>]*class="[^"]*news[^"]*"[^>]*>([^<]*${lowerPlayerName}[^<]*)<\/div>/gi,
+                        /<p[^>]*>([^<]*${lowerPlayerName}[^<]*outlook[^<]*)<\/p>/gi,
+                        /<span[^>]*>([^<]*${lowerPlayerName}[^<]*analysis[^<]*)<\/span>/gi
+                    ];
+                    
+                    newsPatterns.forEach(pattern => {
+                        const matches = html.matchAll(pattern);
+                        for (const match of matches) {
+                            if (match[1] && match[1].trim().length > 20) {
+                                newsItems.push(`📊 FantasyPros: ${match[1].trim()}`);
+                            }
+                        }
+                    });
+                    
+                    return newsItems.slice(0, 2);
+                } catch (error) {
+                    console.error('FantasyPros news extraction failed:', error);
+                    return [];
+                }
             };
 
             const extractHeadlines = (html, playerName) => {
                 try {
-                    // Simple headline extraction (would be more sophisticated in production)
+                    // Fallback headline extraction for generic sources
                     const lines = html.split('\n');
                     const relevantLines = lines.filter(line => 
                         line.toLowerCase().includes(playerName.toLowerCase()) &&
-                        (line.includes('title') || line.includes('headline')) &&
-                        line.length < 200 && line.length > 10
+                        (line.includes('title') || line.includes('headline') || line.includes('news')) &&
+                        line.length < 200 && line.length > 15
                     );
                     
                     return relevantLines
@@ -3559,62 +3733,81 @@
                 return projections[position] || projections['WR'];
             };
 
-            // Simplified close handler
+            // Simplified, reliable close handler
             const closeModal = () => {
-                console.log('🔴 MODAL CLOSE TRIGGERED');
-                console.log('onClose function:', typeof onClose, onClose);
+                console.log('🚪 Closing modal for:', player?.first_name, player?.last_name);
                 
-                if (onClose) {
-                    console.log('✅ Calling onClose...');
-                    onClose();
-                } else {
-                    console.error('❌ No onClose function provided');
+                // Multiple close strategies to ensure modal closes
+                try {
+                    // Strategy 1: Use provided onClose function
+                    if (typeof onClose === 'function') {
+                        onClose();
+                        return;
+                    }
+                    
+                    // Strategy 2: Use global window functions
+                    if (window.handleFantasyProModalClose) {
+                        window.handleFantasyProModalClose();
+                        return;
+                    }
+                    
+                    // Strategy 3: Direct state manipulation
+                    if (window.setShowFantasyProModal) {
+                        window.setShowFantasyProModal(false);
+                        window.setSelectedPlayerForModal(null);
+                        return;
+                    }
+                    
+                    console.warn('⚠️ No close method available');
+                } catch (error) {
+                    console.error('❌ Modal close error:', error);
+                    // Force close by hiding the modal element directly
+                    const modalElement = document.querySelector('.player-overlay');
+                    if (modalElement) {
+                        modalElement.style.display = 'none';
+                    }
                 }
             };
 
             const handleDraftPlayer = () => {
-                console.log('=== DRAFT BUTTON CLICKED ===');
-                console.log('Draft conditions:', {
-                    canDraft,
-                    hasCurrentPick: !!currentPick,
-                    currentPickTeam: currentPick?.teamId,
-                    currentPickRound: currentPick?.round,
-                    playerId: player.player_id,
-                    playerName: `${player.first_name} ${player.last_name}`,
-                    isViewOnly,
-                    isDrafted,
-                    makePickFunction: typeof makePick
-                });
+                console.log('⚡ Draft button clicked for:', `${player.first_name} ${player.last_name}`);
                 
+                // Validate draft conditions
                 if (!currentPick) {
-                    console.error('No current pick available');
+                    console.error('❌ Cannot draft: No active pick');
+                    alert('No active pick available. Wait for your turn.');
                     return;
                 }
                 
                 if (isDrafted) {
-                    console.error('Player already drafted');
+                    console.error('❌ Cannot draft: Player already drafted');
+                    alert('This player has already been drafted.');
                     return;
                 }
                 
                 if (isViewOnly) {
-                    console.error('In view-only mode');
+                    console.error('❌ Cannot draft: View-only mode');
+                    alert('You are in view-only mode and cannot make picks.');
                     return;
                 }
                 
-                if (canDraft && currentPick) {
-                    console.log('Attempting to make pick...');
-                    try {
-                        makePick(player.player_id, currentPick.teamId, false);
-                        console.log('✅ makePick called successfully');
-                        closeModal();
-                    } catch (error) {
-                        console.error('❌ Error calling makePick:', error);
-                    }
-                } else {
-                    console.log('❌ Cannot draft - conditions not met:', {
-                        canDraft,
-                        currentPick: !!currentPick
+                // Execute the draft
+                try {
+                    console.log('🎯 Making pick:', {
+                        playerId: player.player_id,
+                        teamId: currentPick.teamId,
+                        playerName: `${player.first_name} ${player.last_name}`
                     });
+                    
+                    makePick(player.player_id, currentPick.teamId, false);
+                    console.log('✅ Draft successful!');
+                    
+                    // Close modal after successful draft
+                    setTimeout(closeModal, 100);
+                    
+                } catch (error) {
+                    console.error('❌ Draft failed:', error);
+                    alert('Failed to draft player. Please try again.');
                 }
             };
 
@@ -3625,14 +3818,19 @@
             return (
                 <div 
                     className="player-overlay" 
-                    onClick={() => {
-                        console.log('🖱️ Background clicked');
-                        closeModal();
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            console.log('🖱️ Clicked outside modal - closing');
+                            closeModal();
+                        }
                     }}
                 >
                     <div 
                         className="player-overlay-card" 
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('🎯 Clicked inside modal card');
+                        }}
                     >
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center space-x-3">
@@ -3656,11 +3854,14 @@
                                 </div>
                             </div>
                             <button
-                                onClick={() => {
-                                    console.log('❌ X button clicked');
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('❌ X button clicked - closing modal');
                                     closeModal();
                                 }}
-                                className="text-slate-400 hover:text-white text-2xl font-bold"
+                                className="text-slate-400 hover:text-white text-2xl font-bold bg-transparent border-none cursor-pointer p-2 rounded hover:bg-slate-700/50"
+                                type="button"
                             >
                                 ×
                             </button>
@@ -3762,10 +3963,17 @@
                                             </p>
                                         </div>
                                         <button
-                                            onClick={handleDraftPlayer}
-                                            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-lg"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                console.log('🎯 Draft button clicked');
+                                                handleDraftPlayer();
+                                            }}
+                                            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                            type="button"
+                                            disabled={!canDraft}
                                         >
-                                            Draft Player
+                                            {isDrafted ? 'Already Drafted' : isViewOnly ? 'View Only' : !currentPick ? 'No Active Pick' : 'Draft Player'}
                                         </button>
                                     </div>
                                 </div>
@@ -5233,6 +5441,13 @@
                 setShowFantasyProModal(false);
                 setSelectedPlayerForModal(null);
             };
+
+            // Expose modal close function globally for debugging
+            React.useEffect(() => {
+                window.setShowFantasyProModal = setShowFantasyProModal;
+                window.setSelectedPlayerForModal = setSelectedPlayerForModal;
+                window.handleFantasyProModalClose = handleFantasyProModalClose;
+            }, []);
 
             return (
                 <div className="min-h-screen animated-bg">
