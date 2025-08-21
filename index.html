@@ -3052,9 +3052,12 @@
                 playersData 
             } = useDraftStore();
 
+            // Check if we're in view-only mode
+            const isViewOnly = new URLSearchParams(window.location.search).get('view') === 'true';
+
             // Check if this player is already drafted
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-            const canDraft = currentPick && !isDrafted;
+            const canDraft = currentPick && !isDrafted && !isViewOnly;
 
             useEffect(() => {
                 const fetchFantasyProData = async () => {
@@ -3205,9 +3208,25 @@
             };
 
             const handleDraftPlayer = () => {
+                console.log('Draft button clicked:', {
+                    canDraft,
+                    currentPick,
+                    playerId: player.player_id,
+                    teamId: currentPick?.teamId,
+                    isViewOnly,
+                    isDrafted
+                });
+                
                 if (canDraft && currentPick) {
-                    makePick(player.player_id, currentPick.teamId, false);
-                    handleClose();
+                    try {
+                        makePick(player.player_id, currentPick.teamId, false);
+                        console.log('makePick called successfully');
+                        handleClose();
+                    } catch (error) {
+                        console.error('Error calling makePick:', error);
+                    }
+                } else {
+                    console.log('Cannot draft - conditions not met');
                 }
             };
 
@@ -3917,9 +3936,9 @@
                                                         ? 'opacity-50 drafted border-slate-700'
                                                         : 'border-slate-600 hover:border-purple-500'
                                                     }
-                                                    ${!isDrafted && currentPick ? 'pulse-on-hover' : 'cursor-not-allowed'}
+                                                    ${!isDrafted && currentPick ? 'pulse-on-hover' : ''}
                                                 `}
-                                                onClick={() => !isDrafted && currentPick && handlePlayerSelect(player)}
+                                                onClick={() => onPlayerInfoClick && onPlayerInfoClick(player)}
                                             >
                                                 <div className="flex items-center space-x-2">
                                                     <img
@@ -3941,24 +3960,12 @@
                                                     </div>
 
                                                     <div className="flex flex-col items-end space-y-0.5">
-                                                        <div className="flex items-center space-x-1">
-                                                            <span className={`
-                                                                text-xs px-2 py-0.5 rounded-full font-bold text-white
-                                                                ${getPositionClass(player.position)}
-                                                            `}>
-                                                                {player.position || 'N/A'}
-                                                            </span>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    onPlayerInfoClick && onPlayerInfoClick(player);
-                                                                }}
-                                                                className="text-purple-400 hover:text-purple-300 text-xs p-1 rounded hover:bg-purple-500/20 transition-colors"
-                                                                title="View FantasyPros expert analysis"
-                                                            >
-                                                                ℹ️
-                                                            </button>
-                                                        </div>
+                                                        <span className={`
+                                                            text-xs px-2 py-0.5 rounded-full font-bold text-white
+                                                            ${getPositionClass(player.position)}
+                                                        `}>
+                                                            {player.position || 'N/A'}
+                                                        </span>
 
                                                         {isKeeper && !isDrafted && (
                                                             <span className="text-xs px-1 py-0.5 rounded keeper-badge text-black font-bold">
@@ -4065,9 +4072,9 @@
                                                         ? 'opacity-50 drafted border-slate-700'
                                                         : 'border-slate-600 hover:border-purple-500'
                                                     }
-                                                    ${!isDrafted && currentPick ? 'pulse-on-hover' : 'cursor-not-allowed'}
+                                                    ${!isDrafted && currentPick ? 'pulse-on-hover' : ''}
                                                 `}
-                                                onClick={() => !isDrafted && currentPick && handlePlayerSelect(player)}
+                                                onClick={() => onPlayerInfoClick && onPlayerInfoClick(player)}
                                             >
                                                 <div className="flex items-center space-x-3">
                                                     <img
@@ -4089,24 +4096,12 @@
                                                     </div>
 
                                                     <div className="flex flex-col items-end space-y-1">
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className={`
-                                                                text-xs px-3 py-1 rounded-full font-bold text-white
-                                                                ${getPositionClass(player.position)}
-                                                            `}>
-                                                                {player.position || 'N/A'}
-                                                            </span>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    onPlayerInfoClick && onPlayerInfoClick(player);
-                                                                }}
-                                                                className="text-purple-400 hover:text-purple-300 text-sm p-1.5 rounded-lg hover:bg-purple-500/20 transition-colors"
-                                                                title="View FantasyPros expert analysis"
-                                                            >
-                                                                ℹ️
-                                                            </button>
-                                                        </div>
+                                                        <span className={`
+                                                            text-xs px-3 py-1 rounded-full font-bold text-white
+                                                            ${getPositionClass(player.position)}
+                                                        `}>
+                                                            {player.position || 'N/A'}
+                                                        </span>
 
                                                         {isKeeper && !isDrafted && (
                                                             <span className="text-xs px-2 py-1 rounded keeper-badge text-black font-bold">
