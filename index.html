@@ -1324,7 +1324,12 @@
                 
                 // Build history by simulating each pick
                 let currentPicks = [];
-                let currentPickState = this.calculatePickNumber(1, 1, draftSettings.teamCount);
+                let currentPickState = {
+                    round: 1,
+                    pickNumber: 1,
+                    pickInRound: 1,
+                    teamId: 'team-1'
+                };
                 
                 sortedPicks.forEach((pick, index) => {
                     // Create a history entry for the state BEFORE this pick was made
@@ -1340,7 +1345,12 @@
                     // Calculate the next pick state
                     if (index < sortedPicks.length - 1) {
                         const nextPick = sortedPicks[index + 1];
-                        currentPickState = this.calculatePickNumber(nextPick.round, nextPick.pickInRound, draftSettings.teamCount);
+                        currentPickState = {
+                            round: nextPick.round,
+                            pickNumber: nextPick.pickNumber,
+                            pickInRound: nextPick.pickInRound,
+                            teamId: nextPick.teamId
+                        };
                     }
                 });
                 
@@ -2246,8 +2256,13 @@
                     const newPicks = [...picks];
                     const removedPick = newPicks.pop();
                     
-                    // Calculate what the current pick should be after removing the last pick
-                    const newCurrentPick = this.calculatePickNumber(removedPick.round, removedPick.pickInRound, draftSettings.teamCount);
+                    // The current pick should be the pick that was just removed
+                    const newCurrentPick = {
+                        round: removedPick.round,
+                        pickNumber: removedPick.pickNumber,
+                        pickInRound: removedPick.pickInRound,
+                        teamId: removedPick.teamId
+                    };
                     
                     showToast('Last pick undone', 'success');
 
