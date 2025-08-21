@@ -3198,7 +3198,10 @@
 
             // Check if this player is already drafted
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-            const canDraft = currentPick && !isDrafted && !isViewOnly && !(window.isPlayerKeeper && (window.isPlayerKeeper && window.isPlayerKeeper(player, keepers)));
+            
+            // Check if player is a keeper (simple check - if player ID exists in keepers object values)
+            const isKeeper = Object.values(keepers || {}).includes(player.player_id);
+            const canDraft = currentPick && !isDrafted && !isViewOnly && !isKeeper;
 
             useEffect(() => {
                 const fetchFantasyProData = async () => {
@@ -4160,7 +4163,7 @@
                 console.log('⚡ Draft button clicked for:', `${player.first_name} ${player.last_name}`);
                 
                 // Check if player is a keeper
-                if (window.isPlayerKeeper && (window.isPlayerKeeper && window.isPlayerKeeper(player, keepers))) {
+                if (isKeeper) {
                     console.error('❌ Cannot draft: Player is a keeper');
                     alert('This player is a keeper and cannot be drafted.');
                     return;
@@ -4449,7 +4452,7 @@
                                             type="button"
                                             disabled={!canDraft}
                                         >
-                                            {isDrafted ? 'Already Drafted' : (window.isPlayerKeeper && (window.isPlayerKeeper && window.isPlayerKeeper(player, keepers))) ? 'Keeper - Cannot Draft' : isViewOnly ? 'View Only' : !currentPick ? 'No Active Pick' : 'Draft Player'}
+                                            {isDrafted ? 'Already Drafted' : isKeeper ? 'Keeper - Cannot Draft' : isViewOnly ? 'View Only' : !currentPick ? 'No Active Pick' : 'Draft Player'}
                                         </button>
                                     </div>
                                 </div>
@@ -5028,7 +5031,8 @@
 
             const handlePlayerSelect = (player) => {
                 // Don't allow selection of keeper players
-                if ((window.isPlayerKeeper && window.isPlayerKeeper(player, keepers))) {
+                const isPlayerAKeeper = Object.values(keepers || {}).includes(player.player_id);
+                if (isPlayerAKeeper) {
                     console.log('Cannot select keeper player:', player.first_name, player.last_name);
                     return;
                 }
@@ -5169,7 +5173,7 @@
                                 {filteredPlayers.length > 0 ? (
                                     filteredPlayers.map(player => {
                                         const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-                                        const isKeeper = (window.isPlayerKeeper && window.isPlayerKeeper(player, keepers));
+                                        const isKeeper = Object.values(keepers || {}).includes(player.player_id);
                                         const fullName = `${player.first_name || ''} ${player.last_name || ''}`;
 
                                         return (
@@ -5320,7 +5324,7 @@
                                 {filteredPlayers.length > 0 ? (
                                     filteredPlayers.map(player => {
                                         const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-                                        const isKeeper = (window.isPlayerKeeper && window.isPlayerKeeper(player, keepers));
+                                        const isKeeper = Object.values(keepers || {}).includes(player.player_id);
                                         const fullName = `${player.first_name || ''} ${player.last_name || ''}`;
 
                                         return (
