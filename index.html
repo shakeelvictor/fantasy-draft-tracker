@@ -3075,6 +3075,7 @@
                         
                         // Try multiple real data sources in order of preference
                         const dataSources = [
+                            () => fetchSleeperData(player),
                             () => fetchFantasyNerdsData(player),
                             () => fetchESPNData(player),
                             () => fetchTheScoreData(player),
@@ -3128,6 +3129,49 @@
             }, [player]);
 
             // Real API fetch functions
+            const fetchSleeperData = async (player) => {
+                try {
+                    const playerName = `${player.first_name} ${player.last_name}`;
+                    
+                    // First, get trending players to check if this player has recent activity
+                    const trendingResponse = await fetch('https://api.sleeper.app/v1/players/nfl/trending/add?limit=100');
+                    const trendingData = await trendingResponse.json();
+                    
+                    // For demo purposes, we'll use the Sleeper API structure but note that
+                    // Sleeper's main API doesn't contain expert notes - it's primarily for
+                    // player metadata, trending data, and league/roster management
+                    
+                    if (trendingData && trendingData.length > 0) {
+                        // Check if this player is trending (as a proxy for recent news/interest)
+                        const trending = trendingData.find(t => {
+                            // Note: We'd need the actual Sleeper player ID to match properly
+                            // This is just a demonstration of the API structure
+                            return false; // For now, always return false since we can't match without player ID
+                        });
+                        
+                        if (trending) {
+                            return {
+                                ranking: `#${generateRankingByPosition(player.position)}`,
+                                expertNotes: [
+                                    `This player is currently trending on Sleeper with ${trending.count} recent adds, indicating increased fantasy interest among managers.`,
+                                    `Recent activity suggests fantasy managers are targeting this player, potentially due to emerging opportunity or favorable matchup situations.`
+                                ],
+                                tier: `Tier ${Math.ceil(generateRankingByPosition(player.position) / 30)}`,
+                                adp: generateRankingByPosition(player.position).toFixed(1),
+                                projections: generateProjections(player),
+                                source: 'Sleeper Trending Data'
+                            };
+                        }
+                    }
+                    
+                    // If not trending, return null so we try other sources
+                    return null;
+                    
+                } catch (error) {
+                    throw new Error(`Sleeper API failed: ${error.message}`);
+                }
+            };
+
             const fetchFantasyNerdsData = async (player) => {
                 const corsProxy = 'https://corsproxy.io/?';
                 const apiUrl = `${corsProxy}https://api.fantasynerds.com/v1/nfl/news?apikey=TEST`;
@@ -3279,18 +3323,17 @@
             const generateIntelligentFallback = (player) => {
                 const position = player.position;
                 const baseRanking = generateRankingByPosition(position);
-                const expertNotes = generateExpertNotes(player);
                 const projections = generateProjections(player);
                 
                 return {
                     ranking: `#${baseRanking}`,
-                    expertNotes: expertNotes,
+                    expertNotes: ['No expert analysis currently available. Please check back later for updated insights.'],
                     tier: `Tier ${Math.ceil(baseRanking / 30)}`,
                     adp: `${(baseRanking + Math.random() * 20 - 10).toFixed(1)}`,
                     projections: projections,
-                    confidence: 'Medium',
-                    trend: Math.random() > 0.5 ? 'Up' : 'Stable',
-                    source: 'Generated Analysis'
+                    confidence: 'Low',
+                    trend: 'Unknown',
+                    source: 'Basic Data Only'
                 };
             };
 
@@ -3307,59 +3350,6 @@
                 return baseRanks[position] || Math.floor(Math.random() * 50) + 1;
             };
 
-            // Generate realistic 2025 expert notes in paragraph format
-            const generateExpertNotes = (player) => {
-                const position = player.position;
-                const team = player.team || 'FA';
-                const firstName = player.first_name || 'Player';
-                
-                const noteTemplates = {
-                    'QB': [
-                        `${firstName} enters the 2025 season with a significantly improved supporting cast and offensive line, positioning him as a strong QB1 option in most fantasy formats. His mobility and ability to extend plays have become increasingly valuable in today's NFL, and the addition of new weapons in the passing game should boost his ceiling considerably.`,
-                        `The quarterback's red zone efficiency has been a standout strength, with his ability to find tight windows and make accurate throws under pressure. Fantasy managers should expect consistent weekly production with multiple pathways to scoring, including rushing upside that provides a solid floor in tougher matchups.`,
-                        `Recent coaching changes have implemented a more fantasy-friendly scheme that emphasizes quick releases and RPO concepts, perfectly suited to his skill set. With an improved defense keeping games competitive, expect increased passing volume and scoring opportunities throughout the 2025 campaign.`
-                    ],
-                    'RB': [
-                        `This running back has established himself as a three-down workhorse with elite goal-line usage and pass-catching ability that makes him a premium RB1 option in all PPR formats. His combination of power and speed, along with excellent vision between the tackles, has made him one of the most reliable weekly starters in fantasy football.`,
-                        `The backfield situation entering 2025 heavily favors his role, with the team showing commitment to feeding him 20+ touches per game. His durability has been impressive, and the offensive line improvements should create even more running lanes and pass protection for check-downs and screen plays.`,
-                        `Fantasy managers can expect consistent RB1 production with explosive upside, particularly in favorable game scripts. His ability to contribute in the passing game adds a crucial floor in PPR leagues, while his red zone dominance provides weekly touchdown upside that few running backs can match.`
-                    ],
-                    'WR': [
-                        `Entering his prime years, this wide receiver has developed into one of the most reliable targets in fantasy football, with elite route-running ability and exceptional hands that translate to consistent weekly production. His chemistry with the quarterback has reached an elite level, making him a must-start option in virtually all matchups.`,
-                        `The 2025 season brings an expanded role in the offense, with increased slot usage and red zone targets that should boost his touchdown ceiling significantly. His ability to create separation at all levels of the field, combined with excellent after-the-catch ability, makes him a weekly WR1 with league-winning upside.`,
-                        `Target share trends indicate he's become the clear alpha receiver in this offense, with the coaching staff designing plays specifically to get him the ball in space. Fantasy managers can expect 8-12 targets per game with multiple scoring opportunities, making him one of the safest weekly starts at the position.`
-                    ],
-                    'TE': [
-                        `This tight end has emerged as a matchup-proof option who combines reliable hands with excellent route-running ability, making him a set-and-forget starter in all fantasy formats. His red zone usage has increased dramatically, and his ability to find soft spots in zone coverage provides a consistent target for his quarterback.`,
-                        `The 2025 offensive scheme evolution has created more opportunities for tight end production, with increased two-TE sets and motion concepts that free him up for big plays. His blocking ability ensures he stays on the field for high-percentage snaps, giving him more opportunities than many tight ends who come off in obvious passing situations.`,
-                        `Fantasy managers should expect TE1 production with weekly double-digit scoring potential, especially in favorable matchups against teams that struggle to cover tight ends. His combination of floor and ceiling makes him one of the most valuable assets at a position known for inconsistency and volatility.`
-                    ],
-                    'K': [
-                        `Operating in one of the NFL's most explosive offenses, this kicker benefits from numerous red zone opportunities and field goal attempts that provide excellent weekly scoring potential. His accuracy from all distances has been exceptional, and the dome environment for half his games eliminates weather concerns that plague many kickers.`,
-                        `The 2025 season setup is ideal for kicker production, with an improved offense that should consistently move the ball into scoring position. His strong leg and proven accuracy in pressure situations make him a reliable option for fantasy managers looking for consistent point production from the kicker position.`,
-                        `Fantasy managers can expect top-tier kicker production with 8-12 points per game becoming the norm, driven by both field goals and extra points from a high-scoring offense. His reliability in clutch situations and excellent accuracy percentage make him one of the safer weekly plays at the position.`
-                    ],
-                    'DST': [
-                        `This defense enters 2025 with a significantly improved pass rush and a secondary that has shown tremendous growth, making them one of the most fantasy-relevant units in the league. Their ability to generate turnovers and create short fields for their offense provides multiple avenues for fantasy scoring each week.`,
-                        `The defensive coordinator's aggressive scheme has produced consistent pressure on opposing quarterbacks, leading to increased sack totals and forced turnovers that translate directly to fantasy points. Their upcoming schedule includes several favorable matchups against turnover-prone offenses and struggling offensive lines.`,
-                        `Fantasy managers should expect weekly DST1 production with boom potential against weaker opponents, while their improved run defense and pass coverage make them startable even in tougher matchups. The combination of talent and favorable game scripts makes them one of the most reliable weekly defensive options.`
-                    ]
-                };
-                
-                const baseNotes = noteTemplates[position] || [
-                    `This player brings intriguing upside to fantasy lineups with his versatile skill set and improved role in the 2025 offensive scheme. While consistency may vary week to week, his ability to contribute in multiple facets of the game provides a decent floor with explosive ceiling potential.`,
-                    `The coaching staff has shown increased confidence in his abilities, leading to expanded opportunities that could translate to fantasy relevance. Monitor his usage trends early in the season, as increased snaps and target share could make him a valuable waiver wire addition.`,
-                    `Fantasy managers looking for depth options should consider his favorable upcoming schedule and potential for increased involvement as the season progresses. His skill set matches well with the team's offensive philosophy, making him a solid bench stash with streaming appeal.`
-                ];
-                
-                // Add some randomization to make notes feel more authentic
-                const selectedNotes = baseNotes.slice(0, 2);
-                if (Math.random() > 0.5) {
-                    selectedNotes.push(baseNotes[2]);
-                }
-                
-                return selectedNotes;
-            };
 
             // Generate projections based on position
             const generateProjections = (player) => {
@@ -3399,12 +3389,21 @@
                 return projections[position] || projections['WR'];
             };
 
-            const handleClose = () => {
-                console.log('Modal handleClose called - calling onClose immediately');
-                if (onClose && typeof onClose === 'function') {
-                    onClose();
-                } else {
-                    console.error('onClose is not a function:', onClose);
+            const handleClose = (event) => {
+                console.log('Modal handleClose called', { event, onClose });
+                event?.preventDefault?.();
+                event?.stopPropagation?.();
+                
+                try {
+                    if (onClose && typeof onClose === 'function') {
+                        console.log('Calling onClose function...');
+                        onClose();
+                        console.log('onClose called successfully');
+                    } else {
+                        console.error('onClose is not available or not a function:', { onClose, type: typeof onClose });
+                    }
+                } catch (error) {
+                    console.error('Error in handleClose:', error);
                 }
             };
 
@@ -3462,9 +3461,8 @@
                 <div 
                     className="player-overlay" 
                     onClick={(e) => {
-                        console.log('Overlay background clicked');
-                        e.preventDefault();
-                        handleClose();
+                        console.log('Overlay background clicked', e);
+                        handleClose(e);
                     }}
                 >
                     <div 
@@ -3497,9 +3495,9 @@
                             </div>
                             <button
                                 onClick={(e) => {
-                                    console.log('X button clicked');
+                                    console.log('X button clicked', e);
                                     e.stopPropagation();
-                                    handleClose();
+                                    handleClose(e);
                                 }}
                                 className="text-slate-400 hover:text-white text-2xl font-bold"
                             >
