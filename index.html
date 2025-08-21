@@ -3197,7 +3197,7 @@
 
             // Check if this player is already drafted
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-            const canDraft = currentPick && !isDrafted && !isViewOnly;
+            const canDraft = currentPick && !isDrafted && !isViewOnly && !isPlayerKeeper(player);
 
             useEffect(() => {
                 const fetchFantasyProData = async () => {
@@ -4126,6 +4126,13 @@
             const handleDraftPlayer = () => {
                 console.log('⚡ Draft button clicked for:', `${player.first_name} ${player.last_name}`);
                 
+                // Check if player is a keeper
+                if (isPlayerKeeper(player)) {
+                    console.error('❌ Cannot draft: Player is a keeper');
+                    alert('This player is a keeper and cannot be drafted.');
+                    return;
+                }
+                
                 // Validate draft conditions
                 if (!currentPick) {
                     console.error('❌ Cannot draft: No active pick');
@@ -4409,7 +4416,7 @@
                                             type="button"
                                             disabled={!canDraft}
                                         >
-                                            {isDrafted ? 'Already Drafted' : isViewOnly ? 'View Only' : !currentPick ? 'No Active Pick' : 'Draft Player'}
+                                            {isDrafted ? 'Already Drafted' : isPlayerKeeper(player) ? 'Keeper - Cannot Draft' : isViewOnly ? 'View Only' : !currentPick ? 'No Active Pick' : 'Draft Player'}
                                         </button>
                                     </div>
                                 </div>
@@ -5175,17 +5182,7 @@
                                                     }
                                                     ${!isDrafted && !isKeeper && currentPick ? 'pulse-on-hover' : ''}
                                                 `}
-                                                onClick={() => {
-                                                    if (isKeeper) {
-                                                        console.log('Player is a keeper, cannot select:', fullName);
-                                                        return;
-                                                    }
-                                                    if (isDrafted) {
-                                                        onPlayerInfoClick && onPlayerInfoClick(player);
-                                                    } else {
-                                                        handlePlayerSelect(player);
-                                                    }
-                                                }}
+                                                onClick={() => onPlayerInfoClick && onPlayerInfoClick(player)}
                                             >
                                                 <div className="flex items-center space-x-2">
                                                     <img
@@ -5336,17 +5333,7 @@
                                                     }
                                                     ${!isDrafted && !isKeeper && currentPick ? 'pulse-on-hover' : ''}
                                                 `}
-                                                onClick={() => {
-                                                    if (isKeeper) {
-                                                        console.log('Player is a keeper, cannot select:', fullName);
-                                                        return;
-                                                    }
-                                                    if (isDrafted) {
-                                                        onPlayerInfoClick && onPlayerInfoClick(player);
-                                                    } else {
-                                                        handlePlayerSelect(player);
-                                                    }
-                                                }}
+                                                onClick={() => onPlayerInfoClick && onPlayerInfoClick(player)}
                                             >
                                                 <div className="flex items-center space-x-3">
                                                     <img
