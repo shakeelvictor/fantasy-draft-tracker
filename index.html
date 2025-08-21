@@ -734,6 +734,145 @@
             color: white;
         }
 
+        /* View-only player panel styling */
+        .view-only-player-panel {
+            position: relative;
+        }
+        
+        .view-only-player-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(16, 185, 129, 0.05);
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            border-radius: 0.5rem;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .view-only-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive design for view-only player panel */
+        @media (max-width: 768px) {
+            .view-only-player-panel {
+                margin: 1rem 0;
+            }
+            
+            .view-only-header {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .view-only-player-panel {
+                margin: 1.5rem 0;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .view-only-player-panel {
+                margin: 2rem 0;
+            }
+        }
+
+        /* View-only mobile specific styling */
+        .view-only-mobile {
+            position: relative !important;
+            transform: none !important;
+            width: 100% !important;
+            max-height: none !important;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        /* View-only desktop specific styling */
+        .view-only-desktop {
+            position: relative !important;
+            transform: none !important;
+            width: 100% !important;
+            max-width: 500px;
+            height: auto !important;
+            max-height: 80vh;
+            border-radius: 0.5rem;
+            margin: 1rem auto;
+            left: 0 !important;
+            right: 0 !important;
+            top: 0 !important;
+        }
+
+        @media (min-width: 1025px) {
+            .view-only-desktop {
+                max-width: 600px;
+            }
+        }
+
+        /* Tablet-specific responsive design */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .view-only-panel {
+                position: relative !important;
+                transform: none !important;
+                width: 100% !important;
+                max-width: 100%;
+                height: auto !important;
+                max-height: 70vh;
+                border-radius: 0.5rem;
+                margin: 1.5rem auto;
+                left: 0 !important;
+                right: 0 !important;
+                top: 0 !important;
+            }
+            
+            .view-only-header {
+                padding: 0.625rem 1rem;
+                font-size: 0.9375rem;
+            }
+            
+            /* Adjust mobile player panel for tablet in view-only mode */
+            .mobile-player-panel.view-only-mobile {
+                position: relative !important;
+                transform: none !important;
+                width: 100% !important;
+                max-height: 70vh;
+                border-radius: 0.75rem;
+                margin: 1.5rem 0;
+                padding: 1.5rem;
+            }
+        }
+
+        /* Enhanced mobile view-only styling */
+        @media (max-width: 767px) {
+            .view-only-mobile {
+                margin: 0.75rem 0;
+                padding: 1rem !important;
+            }
+            
+            .view-only-header {
+                margin-bottom: 0.75rem;
+                font-size: 0.8125rem;
+            }
+        }
+
+        /* Player panel visibility in view-only mode */
+        .view-only-panel-always-visible {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: none !important;
+        }
+
         /* Mobile menu button */
         .mobile-menu-btn {
             display: none;
@@ -4616,7 +4755,7 @@
         });
 
         // Player List Component
-        const PlayerList = ({ onPlayerInfoClick }) => {
+        const PlayerList = ({ onPlayerInfoClick, isViewOnly = false }) => {
             const {
                 playersData,
                 picks,
@@ -4766,28 +4905,41 @@
             if (isMobile) {
                 return (
                     <>
-                        <PanelToggle />
+                        {!isViewOnly && <PanelToggle />}
                         <div
                             className={`mobile-player-panel glass-dark p-4 ${
-                                showPlayerPanel ? 'open slide-panel-enter-mobile' : ''
-                            }`}
+                                showPlayerPanel || isViewOnly ? 'open slide-panel-enter-mobile' : ''
+                            } ${isViewOnly ? 'view-only-mobile view-only-panel-always-visible' : ''}`}
                         >
+                            {isViewOnly && (
+                                <div className="view-only-header mb-4">
+                                    <div className="flex items-center justify-center space-x-2">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <span>Available Players - View Only</span>
+                                    </div>
+                                </div>
+                            )}
                             <div className="mb-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h2 className="text-lg font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-                                        Available Players
+                                        {isViewOnly ? 'Players & Info' : 'Available Players'}
                                     </h2>
-                                    <button
-                                        onClick={togglePlayerPanel}
-                                        className="text-slate-400 hover:text-white"
-                                    >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                                    {!isViewOnly && (
+                                        <button
+                                            onClick={togglePlayerPanel}
+                                            className="text-slate-400 hover:text-white"
+                                        >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    )}
                                 </div>
 
-                                {currentPick && keepers[`${currentPick.teamId}-${currentPick.round}`] && (
+                                {!isViewOnly && currentPick && keepers[`${currentPick.teamId}-${currentPick.round}`] && (
                                     <div className="mb-3 p-2 glass rounded-lg border border-yellow-500">
                                         <p className="text-yellow-400 text-xs font-semibold">
                                             ⚠️ This team has a keeper for this round
@@ -4826,15 +4978,17 @@
                                     ))}
                                 </div>
 
-                                <label className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer group">
-                                    <input
-                                        type="checkbox"
-                                        checked={showAvailableOnly}
-                                        onChange={toggleShowAvailableOnly}
-                                        className="rounded border-slate-600 text-purple-600 focus:ring-purple-500"
-                                    />
-                                    <span className="group-hover:text-white transition-colors">Show available only</span>
-                                </label>
+                                {!isViewOnly && (
+                                    <label className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            checked={showAvailableOnly}
+                                            onChange={toggleShowAvailableOnly}
+                                            className="rounded border-slate-600 text-purple-600 focus:ring-purple-500"
+                                        />
+                                        <span className="group-hover:text-white transition-colors">Show available only</span>
+                                    </label>
+                                )}
                             </div>
 
                             <div className="space-y-2 max-h-[calc(70vh-200px)] overflow-y-auto pr-2">
@@ -4911,19 +5065,30 @@
             // Desktop version
             return (
                 <>
-                    <PanelToggle />
+                    {!isViewOnly && <PanelToggle />}
                     <div
                         className={`fixed right-0 top-0 h-full w-[400px] transition-transform duration-300 ease-in-out z-50 ${
-                            showPlayerPanel ? 'translate-x-0' : 'translate-x-full'
-                        }`}
+                            showPlayerPanel || isViewOnly ? 'translate-x-0' : 'translate-x-full'
+                        } ${isViewOnly ? 'view-only-desktop view-only-panel-always-visible' : ''}`}
                     >
                         <div className="h-full glass-dark p-6 shadow-2xl overflow-y-auto">
+                            {isViewOnly && (
+                                <div className="view-only-header mb-6">
+                                    <div className="flex items-center justify-center space-x-2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <span>Available Players - View Only</span>
+                                    </div>
+                                </div>
+                            )}
                             <div className="mb-6">
                                 <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent mb-4">
-                                    Available Players
+                                    {isViewOnly ? 'Players & Info' : 'Available Players'}
                                 </h2>
 
-                                {currentPick && keepers[`${currentPick.teamId}-${currentPick.round}`] && (
+                                {!isViewOnly && currentPick && keepers[`${currentPick.teamId}-${currentPick.round}`] && (
                                     <div className="mb-4 p-3 glass rounded-lg border border-yellow-500">
                                         <p className="text-yellow-400 text-sm font-semibold">
                                             ⚠️ This team has a keeper designated for this round
@@ -4962,15 +5127,17 @@
                                     ))}
                                 </div>
 
-                                <label className="flex items-center space-x-2 text-sm text-slate-300 cursor-pointer group">
-                                    <input
-                                        type="checkbox"
-                                        checked={showAvailableOnly}
-                                        onChange={toggleShowAvailableOnly}
-                                        className="rounded border-slate-600 text-purple-600 focus:ring-purple-500"
-                                    />
-                                    <span className="group-hover:text-white transition-colors">Show available only</span>
-                                </label>
+                                {!isViewOnly && (
+                                    <label className="flex items-center space-x-2 text-sm text-slate-300 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            checked={showAvailableOnly}
+                                            onChange={toggleShowAvailableOnly}
+                                            className="rounded border-slate-600 text-purple-600 focus:ring-purple-500"
+                                        />
+                                        <span className="group-hover:text-white transition-colors">Show available only</span>
+                                    </label>
+                                )}
                             </div>
 
                             <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
@@ -5799,8 +5966,13 @@
                             />
                         </div>
 
-                        {/* Player Panel - Hidden in view-only mode */}
-                        {!isViewOnly && <PlayerList onPlayerInfoClick={handlePlayerInfoClick} />}
+                        {/* Player Panel - Always visible with responsive design */}
+                        <div className={`${isViewOnly ? 'view-only-player-panel' : ''}`}>
+                            <PlayerList 
+                                onPlayerInfoClick={handlePlayerInfoClick} 
+                                isViewOnly={isViewOnly}
+                            />
+                        </div>
 
                         {/* Overlays */}
                         {showPlayerOverlay && recentPick && (
