@@ -770,28 +770,51 @@
         // Draft completion sound (celebratory)
         const playCompletionSound = () => {
             try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (!globalAudioContext) {
+                    initializeAudioContext();
+                }
 
+                if (!globalAudioContext) {
+                    console.log('🔇 Audio context not available for completion sound');
+                    return;
+                }
+
+                // Resume audio context if suspended
+                if (globalAudioContext.state === 'suspended') {
+                    globalAudioContext.resume().then(() => {
+                        playCompletionSoundInternal();
+                    });
+                } else {
+                    playCompletionSoundInternal();
+                }
+            } catch (error) {
+                console.warn('⚠️ Completion sound error:', error);
+            }
+        };
+
+        const playCompletionSoundInternal = () => {
+            try {
                 // Play a cheerful ascending melody
                 const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
                 notes.forEach((freq, index) => {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
+                    const oscillator = globalAudioContext.createOscillator();
+                    const gainNode = globalAudioContext.createGain();
 
                     oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
+                    gainNode.connect(globalAudioContext.destination);
 
-                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + index * 0.15);
+                    oscillator.frequency.setValueAtTime(freq, globalAudioContext.currentTime + index * 0.15);
 
-                    gainNode.gain.setValueAtTime(0, audioContext.currentTime + index * 0.15);
-                    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + index * 0.15 + 0.05);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + index * 0.15 + 0.5);
+                    gainNode.gain.setValueAtTime(0, globalAudioContext.currentTime + index * 0.15);
+                    gainNode.gain.linearRampToValueAtTime(0.3, globalAudioContext.currentTime + index * 0.15 + 0.05);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, globalAudioContext.currentTime + index * 0.15 + 0.5);
 
-                    oscillator.start(audioContext.currentTime + index * 0.15);
-                    oscillator.stop(audioContext.currentTime + index * 0.15 + 0.5);
+                    oscillator.start(globalAudioContext.currentTime + index * 0.15);
+                    oscillator.stop(globalAudioContext.currentTime + index * 0.15 + 0.5);
                 });
-            } catch (e) {
-                console.log('Audio not available');
+                console.log('🎉 Completion sound played');
+            } catch (error) {
+                console.warn('⚠️ Completion sound internal error:', error);
             }
         };
 
@@ -2421,44 +2444,90 @@
 
         }
 
+        // Global audio context for better performance and browser compatibility
+        let globalAudioContext = null;
+        let audioContextInitialized = false;
+
         // Create store instance
         const draftStore = new DraftStore();
+
+        // Initialize audio on first user interaction (required by modern browsers)
+        document.addEventListener('click', enableAudio, { once: true });
+        document.addEventListener('keydown', enableAudio, { once: true });
+        document.addEventListener('touchstart', enableAudio, { once: true });
+
+        const initializeAudioContext = () => {
+            if (!audioContextInitialized) {
+                try {
+                    globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    audioContextInitialized = true;
+                    console.log('🔊 Audio context initialized');
+                } catch (error) {
+                    console.warn('⚠️ Audio context not available:', error);
+                }
+            }
+        };
+
+        // Initialize audio on first user interaction
+        const enableAudio = () => {
+            if (!audioContextInitialized) {
+                initializeAudioContext();
+                if (globalAudioContext && globalAudioContext.state === 'suspended') {
+                    globalAudioContext.resume().then(() => {
+                        console.log('🔊 Audio context resumed');
+                    });
+                }
+            }
+        };
 
         // Sound effects
         const playDraftSound = () => {
             try {
-                // Create audio context for better browser compatibility
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (!globalAudioContext) {
+                    initializeAudioContext();
+                }
 
+                if (!globalAudioContext) {
+                    console.log('🔇 Audio context not available');
+                    return;
+                }
+
+                // Resume audio context if suspended (required by modern browsers)
+                if (globalAudioContext.state === 'suspended') {
+                    globalAudioContext.resume().then(() => {
+                        playDraftSoundInternal();
+                    });
+                } else {
+                    playDraftSoundInternal();
+                }
+            } catch (error) {
+                console.warn('⚠️ Draft sound error:', error);
+            }
+        };
+
+        const playDraftSoundInternal = () => {
+            try {
                 // Create a simple draft sound using Web Audio API
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
+                const oscillator = globalAudioContext.createOscillator();
+                const gainNode = globalAudioContext.createGain();
 
                 oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+                gainNode.connect(globalAudioContext.destination);
 
                 // Draft sound: quick ascending tone
-                oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1);
-                oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.3);
+                oscillator.frequency.setValueAtTime(400, globalAudioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, globalAudioContext.currentTime + 0.1);
+                oscillator.frequency.exponentialRampToValueAtTime(600, globalAudioContext.currentTime + 0.3);
 
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                gainNode.gain.setValueAtTime(0.3, globalAudioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, globalAudioContext.currentTime + 0.4);
 
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.4);
+                oscillator.start(globalAudioContext.currentTime);
+                oscillator.stop(globalAudioContext.currentTime + 0.4);
 
-                // Clean up
-                setTimeout(() => {
-                    try {
-                        audioContext.close();
-                    } catch (e) {
-                        // Ignore cleanup errors
-                    }
-                }, 500);
+                console.log('🔊 Draft sound played');
             } catch (error) {
-                // Fallback: try to use a simple beep if Web Audio API fails
-                console.log('Draft sound played (audio not available)');
+                console.warn('⚠️ Draft sound internal error:', error);
             }
         };
 
@@ -2800,33 +2869,7 @@
 
             useEffect(() => {
                 // Play celebration sound when overlay appears
-                try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-
-                    // Celebration sound: triumphant chord progression
-                    oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-                    oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.15); // E5
-                    oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.3); // G5
-
-                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
-
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.6);
-
-                    setTimeout(() => {
-                        try {
-                            audioContext.close();
-                        } catch (e) {}
-                    }, 700);
-                } catch (error) {
-                    console.log('Celebration sound played (audio not available)');
-                }
+                playDraftSound(); // Use the centralized sound function
 
                 const timer = setTimeout(() => {
                     setFadeOut(true);
