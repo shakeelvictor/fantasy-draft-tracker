@@ -1949,20 +1949,22 @@
 
                     console.log(`Converting keeper to pick - keeping keeper designation for ${keeperKey}`);
 
+                    const trimmedHistory = newHistory.slice(-50);
                     this.setState({
                         picks: [...picks, newPick],
                         currentPick: isFinalPick ? null : nextPick,
-                        history: newHistory.slice(-50),
-                        currentHistoryIndex: newHistory.length - 1,
+                        history: trimmedHistory,
+                        currentHistoryIndex: trimmedHistory.length - 1,
                         recentPick: recentPickWithTeam,
                         draftJustCompleted: isFinalPick
                     });
                 } else {
+                    const trimmedHistory = newHistory.slice(-50);
                     this.setState({
                         picks: [...picks, newPick],
                         currentPick: isFinalPick ? null : nextPick,
-                        history: newHistory.slice(-50),
-                        currentHistoryIndex: newHistory.length - 1,
+                        history: trimmedHistory,
+                        currentHistoryIndex: trimmedHistory.length - 1,
                         recentPick: recentPickWithTeam,
                         draftJustCompleted: isFinalPick
                     });
