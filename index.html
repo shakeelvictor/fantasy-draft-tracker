@@ -4985,7 +4985,44 @@
                 return positionMap[position] || 'position-idp';
             };
 
+            // Check if a player is a keeper for any team
+            const isPlayerKeeper = (player) => {
+                const playerIds = [player.player_id, player.id, player.playerId].filter(Boolean);
+                const playerFullName = `${player.first_name || ''} ${player.last_name || ''}`.toLowerCase().trim();
+                
+                return Object.values(keepers || {}).some(teamKeepers => {
+                    if (Array.isArray(teamKeepers)) {
+                        return teamKeepers.some(keeper => {
+                            if (!keeper) return false;
+                            
+                            // Check ID matches
+                            const keeperIds = [keeper.playerId, keeper.player_id, keeper.id].filter(Boolean);
+                            if (playerIds.some(playerId => keeperIds.includes(playerId))) {
+                                return true;
+                            }
+                            
+                            // Check name matches
+                            let keeperName = '';
+                            if (keeper.first_name && keeper.last_name) {
+                                keeperName = `${keeper.first_name} ${keeper.last_name}`.toLowerCase().trim();
+                            } else if (keeper.name) {
+                                keeperName = keeper.name.toLowerCase().trim();
+                            }
+                            
+                            return keeperName && keeperName === playerFullName;
+                        });
+                    }
+                    return false;
+                });
+            };
+
             const handlePlayerSelect = (player) => {
+                // Don't allow selection of keeper players
+                if (isPlayerKeeper(player)) {
+                    console.log('Cannot select keeper player:', player.first_name, player.last_name);
+                    return;
+                }
+                
                 if (currentPick) {
                     // Check if this player is the designated keeper for this pick
                     const keeperKey = `${currentPick.teamId}-${currentPick.round}`;
@@ -5122,21 +5159,33 @@
                                 {filteredPlayers.length > 0 ? (
                                     filteredPlayers.map(player => {
                                         const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-                                        const isKeeper = Object.values(keepers).includes(player.player_id);
+                                        const isKeeper = isPlayerKeeper(player);
                                         const fullName = `${player.first_name || ''} ${player.last_name || ''}`;
 
                                         return (
                                             <div
                                                 key={player.player_id}
                                                 className={`
-                                                    player-card glass p-3 rounded-lg border cursor-pointer
+                                                    player-card glass p-3 rounded-lg border
                                                     ${isDrafted
-                                                        ? 'opacity-50 drafted border-slate-700'
-                                                        : 'border-slate-600 hover:border-purple-500'
+                                                        ? 'opacity-50 drafted border-slate-700 cursor-not-allowed'
+                                                        : isKeeper 
+                                                        ? 'opacity-50 border-yellow-600 cursor-not-allowed'
+                                                        : 'border-slate-600 hover:border-purple-500 cursor-pointer'
                                                     }
-                                                    ${!isDrafted && currentPick ? 'pulse-on-hover' : ''}
+                                                    ${!isDrafted && !isKeeper && currentPick ? 'pulse-on-hover' : ''}
                                                 `}
-                                                onClick={() => onPlayerInfoClick && onPlayerInfoClick(player)}
+                                                onClick={() => {
+                                                    if (isKeeper) {
+                                                        console.log('Player is a keeper, cannot select:', fullName);
+                                                        return;
+                                                    }
+                                                    if (isDrafted) {
+                                                        onPlayerInfoClick && onPlayerInfoClick(player);
+                                                    } else {
+                                                        handlePlayerSelect(player);
+                                                    }
+                                                }}
                                             >
                                                 <div className="flex items-center space-x-2">
                                                     <img
@@ -5271,21 +5320,33 @@
                                 {filteredPlayers.length > 0 ? (
                                     filteredPlayers.map(player => {
                                         const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-                                        const isKeeper = Object.values(keepers).includes(player.player_id);
+                                        const isKeeper = isPlayerKeeper(player);
                                         const fullName = `${player.first_name || ''} ${player.last_name || ''}`;
 
                                         return (
                                             <div
                                                 key={player.player_id}
                                                 className={`
-                                                    player-card glass p-4 rounded-lg border cursor-pointer
+                                                    player-card glass p-4 rounded-lg border
                                                     ${isDrafted
-                                                        ? 'opacity-50 drafted border-slate-700'
-                                                        : 'border-slate-600 hover:border-purple-500'
+                                                        ? 'opacity-50 drafted border-slate-700 cursor-not-allowed'
+                                                        : isKeeper 
+                                                        ? 'opacity-50 border-yellow-600 cursor-not-allowed'
+                                                        : 'border-slate-600 hover:border-purple-500 cursor-pointer'
                                                     }
-                                                    ${!isDrafted && currentPick ? 'pulse-on-hover' : ''}
+                                                    ${!isDrafted && !isKeeper && currentPick ? 'pulse-on-hover' : ''}
                                                 `}
-                                                onClick={() => onPlayerInfoClick && onPlayerInfoClick(player)}
+                                                onClick={() => {
+                                                    if (isKeeper) {
+                                                        console.log('Player is a keeper, cannot select:', fullName);
+                                                        return;
+                                                    }
+                                                    if (isDrafted) {
+                                                        onPlayerInfoClick && onPlayerInfoClick(player);
+                                                    } else {
+                                                        handlePlayerSelect(player);
+                                                    }
+                                                }}
                                             >
                                                 <div className="flex items-center space-x-3">
                                                     <img
