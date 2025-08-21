@@ -2226,8 +2226,10 @@
                     return;
                 }
 
-                const { currentHistoryIndex, history } = this.state;
-                if (currentHistoryIndex >= 0) {
+                const { currentHistoryIndex, history, picks, draftSettings } = this.state;
+                
+                // If we have history, use it
+                if (currentHistoryIndex >= 0 && history[currentHistoryIndex]) {
                     const previousState = history[currentHistoryIndex];
                     showToast('Pick undone', 'success');
 
@@ -2239,6 +2241,24 @@
                         recentPick: null,
                         draftJustCompleted: false
                     }, true); // Enable broadcast for real-time sync
+                } else if (picks.length > 0) {
+                    // No history available, but we have picks - just remove the last pick
+                    const newPicks = [...picks];
+                    const removedPick = newPicks.pop();
+                    
+                    // Calculate what the current pick should be after removing the last pick
+                    const newCurrentPick = this.calculatePickNumber(removedPick.round, removedPick.pickInRound, draftSettings.teamCount);
+                    
+                    showToast('Last pick undone', 'success');
+
+                    this.setState({
+                        picks: newPicks,
+                        currentPick: newCurrentPick,
+                        recentPick: null,
+                        draftJustCompleted: false
+                    }, true); // Enable broadcast for real-time sync
+                } else {
+                    showToast('No picks to undo', 'info');
                 }
             }
 
@@ -4075,7 +4095,7 @@
             } = useDraftStore();
 
             const isMobile = useIsMobile();
-            const canUndo = currentHistoryIndex >= 0;
+            const canUndo = picks.length > 0; // Always allow undo if there are any picks
             const isDraftComplete = !currentPick && picks.length > 0;
 
             // Mobile menu component
