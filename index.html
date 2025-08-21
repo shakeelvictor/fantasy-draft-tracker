@@ -3043,6 +3043,7 @@
             const [fantasyProData, setFantasyProData] = useState(null);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
+            const [closing, setClosing] = useState(false);
             
             const { 
                 makePick, 
@@ -3733,40 +3734,10 @@
                 return projections[position] || projections['WR'];
             };
 
-            // Simplified, reliable close handler
-            const closeModal = () => {
-                console.log('🚪 Closing modal for:', player?.first_name, player?.last_name);
-                
-                // Multiple close strategies to ensure modal closes
-                try {
-                    // Strategy 1: Use provided onClose function
-                    if (typeof onClose === 'function') {
-                        onClose();
-                        return;
-                    }
-                    
-                    // Strategy 2: Use global window functions
-                    if (window.handleFantasyProModalClose) {
-                        window.handleFantasyProModalClose();
-                        return;
-                    }
-                    
-                    // Strategy 3: Direct state manipulation
-                    if (window.setShowFantasyProModal) {
-                        window.setShowFantasyProModal(false);
-                        window.setSelectedPlayerForModal(null);
-                        return;
-                    }
-                    
-                    console.warn('⚠️ No close method available');
-                } catch (error) {
-                    console.error('❌ Modal close error:', error);
-                    // Force close by hiding the modal element directly
-                    const modalElement = document.querySelector('.player-overlay');
-                    if (modalElement) {
-                        modalElement.style.display = 'none';
-                    }
-                }
+            // Consistent close handler like other modals
+            const handleClose = () => {
+                setClosing(true);
+                setTimeout(onClose, 300);
             };
 
             const handleDraftPlayer = () => {
@@ -3803,7 +3774,7 @@
                     console.log('✅ Draft successful!');
                     
                     // Close modal after successful draft
-                    setTimeout(closeModal, 100);
+                    setTimeout(handleClose, 100);
                     
                 } catch (error) {
                     console.error('❌ Draft failed:', error);
@@ -3816,22 +3787,8 @@
             const fullName = `${player.first_name} ${player.last_name}`;
 
             return (
-                <div 
-                    className="player-overlay" 
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) {
-                            console.log('🖱️ Clicked outside modal - closing');
-                            closeModal();
-                        }
-                    }}
-                >
-                    <div 
-                        className="player-overlay-card" 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            console.log('🎯 Clicked inside modal card');
-                        }}
-                    >
+                <div className={`fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4 ${closing ? 'closing' : ''}`}>
+                    <div className={`glass-dark rounded-xl p-4 sm:p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl ${closing ? 'modal-exit' : 'modal-enter'}`}>
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center space-x-3">
                                 <img
@@ -3854,12 +3811,7 @@
                                 </div>
                             </div>
                             <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('❌ X button clicked - closing modal');
-                                    closeModal();
-                                }}
+                                onClick={handleClose}
                                 className="text-slate-400 hover:text-white text-2xl font-bold bg-transparent border-none cursor-pointer p-2 rounded hover:bg-slate-700/50"
                                 type="button"
                             >
@@ -4003,6 +3955,15 @@
                                 </p>
                                 <p className="mt-1">Click outside to close</p>
                             </div>
+                        </div>
+
+                        <div className="flex justify-end mt-4 sm:mt-6">
+                            <button
+                                onClick={handleClose}
+                                className="px-4 sm:px-6 py-2 sm:py-3 glass hover:bg-slate-600 text-white rounded-lg transition-all font-medium text-sm sm:text-base"
+                            >
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>
