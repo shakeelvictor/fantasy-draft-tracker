@@ -3084,7 +3084,6 @@
                         const dataSources = [
                             () => fetchSleeperData(player),
                             () => fetchFantasyNerdsData(player),
-                            () => fetchESPNData(player),
                             () => fetchTheScoreData(player),
                             () => fetchTheSportsDBData(player)
                         ];
@@ -3113,9 +3112,15 @@
                         
                         // Helper function to get round from ADP
                         const getADPRound = (adp) => {
-                            const round = Math.ceil(adp / 12); // 12-team league assumption
-                            const pick = ((adp - 1) % 12) + 1;
-                            return `${round}.${pick.toString().padStart(2, '0')} (${adp.toFixed(1)})`;
+                            // Ensure adp is a number and handle invalid values
+                            const numericADP = parseFloat(adp);
+                            if (isNaN(numericADP) || numericADP <= 0) {
+                                return 'N/A';
+                            }
+                            
+                            const round = Math.ceil(numericADP / 12); // 12-team league assumption
+                            const pick = ((numericADP - 1) % 12) + 1;
+                            return `${round}.${pick.toString().padStart(2, '0')} (${numericADP.toFixed(1)})`;
                         };
 
                         // Merge news and ranking data
@@ -3196,31 +3201,6 @@
                 try {
                     console.log(`📰 Fetching real news for ${playerName} from multiple sources...`);
                     
-                    // ESPN Fantasy Football News with direct links
-                    try {
-                        const espnUrl = `https://www.espn.com/nfl/player/_/name/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}`;
-                        news.push({
-                            title: `Latest ${playerName} news, stats, and analysis from ESPN`,
-                            source: 'ESPN',
-                            url: espnUrl,
-                            isLink: true
-                        });
-                    } catch (error) {
-                        console.log('ESPN link generation failed');
-                    }
-                    
-                    // Yahoo Sports Player Page
-                    try {
-                        const yahooUrl = `https://sports.yahoo.com/nfl/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}`;
-                        news.push({
-                            title: `${playerName} fantasy outlook and projections - Yahoo Sports`,
-                            source: 'Yahoo Sports',
-                            url: yahooUrl,
-                            isLink: true
-                        });
-                    } catch (error) {
-                        console.log('Yahoo link generation failed');
-                    }
                     
                     // NFL.com Player Profile
                     try {
@@ -3250,20 +3230,6 @@
                 return news.slice(0, 4); // Return top 4 news items
             };
             
-            // ESPN Player News with links
-            const fetchESPNPlayerNews = async (player) => {
-                try {
-                    const searchUrl = `https://www.espn.com/nfl/player/_/id/${player.player_id}`;
-                    return [{
-                        title: `Latest news and updates for ${player.first_name} ${player.last_name}`,
-                        source: 'ESPN',
-                        url: searchUrl,
-                        isLink: true
-                    }];
-                } catch (error) {
-                    return [];
-                }
-            };
 
             // Reddit Fantasy Football news with links
             const fetchRedditFantasyNews = async (player) => {
@@ -3571,8 +3537,9 @@
             
             // Calculate realistic ADP from rank and ECR vs ADP differential
             const calculateADPFromRank = (rank, ecrVsAdp) => {
+                const numericRank = parseFloat(rank) || 0;
                 const adpDiff = parseFloat(ecrVsAdp) || 0;
-                return Math.max(1, rank - adpDiff);
+                return Math.max(1, numericRank - adpDiff);
             };
             
             // Generate realistic position-based rankings for unlisted players
@@ -3617,12 +3584,6 @@
                         title: `${playerName} - Weekly Rankings & Start/Sit Advice`,
                         source: 'FantasyPros',
                         url: `https://www.fantasypros.com/nfl/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}.php`,
-                        isLink: true
-                    },
-                    {
-                        title: `${playerName} Player Profile & Fantasy Projections`,
-                        source: 'ESPN Fantasy',
-                        url: `https://fantasy.espn.com/football/players/projections/_/search/${encodeURIComponent(playerName)}`,
                         isLink: true
                     },
                     {
@@ -3754,33 +3715,6 @@
                 return null;
             };
 
-            const fetchESPNData = async (player) => {
-                const corsProxy = 'https://corsproxy.io/?';
-                const season = new Date().getFullYear();
-                const apiUrl = `${corsProxy}https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${season}/players?view=kona_player_info`;
-                
-                try {
-                    const response = await fetch(apiUrl);
-                    const data = await response.json();
-                    
-                    // Find player in ESPN data
-                    const playerData = findPlayerInESPNData(data, player);
-                    
-                    if (playerData && playerData.news) {
-                        return {
-                            ranking: playerData.ranking || `#${generateRankingByPosition(player.position)}`,
-                            expertNotes: playerData.news.split('. ').slice(0, 3),
-                            tier: `Tier ${Math.ceil(generateRankingByPosition(player.position) / 30)}`,
-                            adp: generateRankingByPosition(player.position).toFixed(1),
-                            projections: generateProjections(player),
-                            source: 'ESPN'
-                        };
-                    }
-                } catch (error) {
-                    throw new Error(`ESPN API failed: ${error.message}`);
-                }
-                return null;
-            };
 
             const fetchTheScoreData = async (player) => {
                 // The Score API endpoint (if available)
@@ -3858,20 +3792,6 @@
                 return null;
             };
 
-            const findPlayerInESPNData = (data, player) => {
-                try {
-                    if (data && data.players) {
-                        return data.players.find(p => 
-                            p.player && 
-                            p.player.firstName?.toLowerCase() === player.first_name?.toLowerCase() &&
-                            p.player.lastName?.toLowerCase() === player.last_name?.toLowerCase()
-                        );
-                    }
-                } catch (error) {
-                    console.error('Error finding player in ESPN data:', error);
-                }
-                return null;
-            };
 
             // Intelligent fallback when no real data is available
             const generateIntelligentFallback = (player) => {
@@ -3946,6 +3866,13 @@
 
             // Generate ranking based on position
             const generateRankingByPosition = (position) => {
+                // Check if this is an individual defensive player (IDP)
+                const isDefensivePlayer = (pos) => {
+                    const basePos = pos.replace(/\d+/g, '');
+                    const defensivePositions = ['LB', 'DE', 'DT', 'S', 'CB', 'FS', 'SS', 'OLB', 'MLB', 'NT', 'DL', 'DB'];
+                    return defensivePositions.includes(basePos);
+                };
+                
                 const baseRanks = {
                     'QB': Math.floor(Math.random() * 20) + 1,
                     'RB': Math.floor(Math.random() * 40) + 1,
@@ -3954,6 +3881,12 @@
                     'K': Math.floor(Math.random() * 20) + 1,
                     'DST': Math.floor(Math.random() * 20) + 1
                 };
+                
+                // Handle defensive positions
+                if (isDefensivePlayer(position)) {
+                    return Math.floor(Math.random() * 50) + 100; // IDP players ranked 100+
+                }
+                
                 return baseRanks[position] || Math.floor(Math.random() * 50) + 1;
             };
 
@@ -3964,6 +3897,14 @@
                 
                 // Debug logging to help identify position issues
                 console.log(`🏈 Generating projections for ${player.first_name} ${player.last_name}, Position: "${position}"`);
+                
+                // Check if this is an individual defensive player (IDP) 
+                const isDefensivePlayer = (pos) => {
+                    // Extract base position (remove numbers)
+                    const basePos = pos.replace(/\d+/g, '');
+                    const defensivePositions = ['LB', 'DE', 'DT', 'S', 'CB', 'FS', 'SS', 'OLB', 'MLB', 'NT', 'DL', 'DB', 'DST', 'DEF'];
+                    return defensivePositions.includes(basePos);
+                };
                 
                 const projections = {
                     'QB': {
@@ -3991,15 +3932,17 @@
                         fieldGoals: Math.floor(Math.random() * 15) + 15,
                         extraPoints: Math.floor(Math.random() * 20) + 25
                     },
-                    'DST': {
-                        points: Math.floor(Math.random() * 50) + 100,
-                        sacks: Math.floor(Math.random() * 20) + 25,
-                        interceptions: Math.floor(Math.random() * 8) + 10,
-                        fumbleRecoveries: Math.floor(Math.random() * 6) + 8,
-                        defensiveTDs: Math.floor(Math.random() * 3) + 2,
-                        safeties: Math.floor(Math.random() * 2) + 1
+                    'IDP': {
+                        points: Math.floor(Math.random() * 50) + 80,
+                        tackles: Math.floor(Math.random() * 40) + 60,
+                        assists: Math.floor(Math.random() * 20) + 25,
+                        sacks: Math.floor(Math.random() * 8) + 2,
+                        interceptions: Math.floor(Math.random() * 3) + 1,
+                        fumbleRecoveries: Math.floor(Math.random() * 2) + 1,
+                        defensiveTDs: Math.floor(Math.random() * 1) + 0,
+                        passesDefended: Math.floor(Math.random() * 8) + 3
                     },
-                    'DEF': {
+                    'DST': {
                         points: Math.floor(Math.random() * 50) + 100,
                         sacks: Math.floor(Math.random() * 20) + 25,
                         interceptions: Math.floor(Math.random() * 8) + 10,
@@ -4009,9 +3952,15 @@
                     }
                 };
                 
-                // Handle defensive positions (DST, DEF, Defense, etc.)
+                // Handle individual defensive players (IDP)
+                if (isDefensivePlayer(position)) {
+                    console.log('✅ Using IDP projections for:', player.first_name, player.last_name, `Position: ${position}`);
+                    return projections['IDP'];
+                }
+                
+                // Handle team defense positions
                 if (position === 'DST' || position === 'DEF' || position === 'Defense' || position === 'D/ST') {
-                    console.log('✅ Using defensive projections for:', player.first_name, player.last_name);
+                    console.log('✅ Using team defense projections for:', player.first_name, player.last_name);
                     return projections['DST'];
                 }
                 
