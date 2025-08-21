@@ -3143,48 +3143,39 @@
                 fetchFantasyProData();
             }, [player]);
 
-            // Real API fetch functions with focus on latest news
+            // Improved API-based news fetching
             const fetchPlayerNews = async (player) => {
                 const playerName = `${player.first_name} ${player.last_name}`;
                 const newsResults = [];
                 
                 console.log(`📰 Fetching latest news for ${playerName}...`);
                 
-                // Try multiple reliable news sources for real NFL player news
                 try {
-                    // ESPN Fantasy News
-                    const espnNews = await fetchESPNPlayerNews(player);
+                    // Try ESPN Fantasy News API first
+                    const espnNews = await fetchESPNFantasyNews(player);
                     if (espnNews.length > 0) {
                         newsResults.push(...espnNews);
                         console.log(`✅ Got ${espnNews.length} ESPN news items`);
                     }
                     
-                    // NFL.com Player News
-                    const nflNews = await fetchNFLPlayerNews(player);
-                    if (nflNews.length > 0) {
-                        newsResults.push(...nflNews);
-                        console.log(`✅ Got ${nflNews.length} NFL.com news items`);
-                    }
-                    
-                    // Fantasy Football Subreddit
-                    const redditNews = await fetchFantasyFootballReddit(player);
-                    if (redditNews.length > 0) {
-                        newsResults.push(...redditNews);
-                        console.log(`✅ Got ${redditNews.length} Reddit news items`);
-                    }
-                    
-                    // FantasyPros News (if available)
-                    const fpNews = await fetchFantasyProsNews(player);
-                    if (fpNews.length > 0) {
-                        newsResults.push(...fpNews);
-                        console.log(`✅ Got ${fpNews.length} FantasyPros news items`);
+                    // Try Sleeper trending data
+                    const sleeperNews = await fetchSleeperPlayerTrends(player);
+                    if (sleeperNews.length > 0) {
+                        newsResults.push(...sleeperNews);
+                        console.log(`✅ Got ${sleeperNews.length} Sleeper trend items`);
                     }
                     
                 } catch (error) {
                     console.error(`❌ Error fetching news for ${playerName}:`, error);
                 }
                 
-                // Sort by date/relevance and return top 4
+                // If no real news found, provide basic player context
+                if (newsResults.length === 0) {
+                    const playerContext = generatePlayerContext(player);
+                    newsResults.push(...playerContext);
+                }
+                
+                // Return top 4 items
                 return newsResults
                     .filter(item => item && item.trim().length > 10)
                     .slice(0, 4);
@@ -3419,6 +3410,122 @@
                 } catch (error) {
                     return [];
                 }
+            };
+
+            // NEW IMPROVED API FUNCTIONS
+            
+            // ESPN Fantasy News API (replaces old scraping method)
+            const fetchESPNFantasyNews = async (player) => {
+                try {
+                    const playerName = `${player.first_name} ${player.last_name}`;
+                    console.log(`📺 Fetching ESPN fantasy news for ${playerName}...`);
+                    
+                    // Try ESPN's direct fantasy news API
+                    const espnApiUrl = `https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?limit=10&playerId=${player.player_id}`;
+                    
+                    const response = await fetch(espnApiUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (compatible; FantasyDraftTracker/1.0)',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`ESPN API returned ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data && data.items && data.items.length > 0) {
+                        return data.items
+                            .slice(0, 2)
+                            .map(item => `📺 ESPN: ${item.headline || item.description}`)
+                            .filter(item => item.length > 15);
+                    }
+                    
+                    return [];
+                    
+                } catch (error) {
+                    console.log(`❌ ESPN fantasy news failed for ${player.first_name} ${player.last_name}:`, error.message);
+                    return [];
+                }
+            };
+
+            // Sleeper Trending Data (replaces old scraping methods)
+            const fetchSleeperPlayerTrends = async (player) => {
+                try {
+                    const playerName = `${player.first_name} ${player.last_name}`;
+                    console.log(`💤 Fetching Sleeper trends for ${playerName}...`);
+                    
+                    // Get trending adds/drops
+                    const [addResponse, dropResponse] = await Promise.all([
+                        fetch('https://api.sleeper.app/v1/players/nfl/trending/add?limit=50'),
+                        fetch('https://api.sleeper.app/v1/players/nfl/trending/drop?limit=50')
+                    ]);
+                    
+                    const [addData, dropData] = await Promise.all([
+                        addResponse.json(),
+                        dropResponse.json()
+                    ]);
+                    
+                    const news = [];
+                    
+                    // Check if player is trending in adds
+                    const trendingAdds = addData.find(item => item.player_id === player.player_id);
+                    if (trendingAdds) {
+                        news.push(`🔥 Trending: ${trendingAdds.count} recent adds on Sleeper - increasing fantasy interest`);
+                    }
+                    
+                    // Check if player is trending in drops  
+                    const trendingDrops = dropData.find(item => item.player_id === player.player_id);
+                    if (trendingDrops) {
+                        news.push(`📉 Alert: ${trendingDrops.count} recent drops on Sleeper - fantasy managers losing confidence`);
+                    }
+                    
+                    return news;
+                    
+                } catch (error) {
+                    console.log(`❌ Sleeper trends failed for ${player.first_name} ${player.last_name}:`, error.message);
+                    return [];
+                }
+            };
+
+            // Generate basic player context when no real news is available
+            const generatePlayerContext = (player) => {
+                const position = player.position;
+                const team = player.team || 'FA';
+                
+                const contexts = {
+                    'QB': [
+                        `Starting quarterback for ${team} with strong fantasy upside this season`,
+                        `Key player to watch for passing touchdowns and yardage production`
+                    ],
+                    'RB': [
+                        `Running back for ${team} with potential for high-touch volume`,
+                        `Monitor for goal-line opportunities and target share in passing game`
+                    ],
+                    'WR': [
+                        `Wide receiver for ${team} with opportunity for targets and red zone looks`,
+                        `Track for weekly target share and big-play potential`
+                    ],
+                    'TE': [
+                        `Tight end for ${team} in position to contribute in both receiving and red zone`,
+                        `Monitor for consistent target share and touchdown opportunities`
+                    ],
+                    'K': [
+                        `Kicker for ${team} with scoring opportunities dependent on team success`,
+                        `Value tied to team's red zone efficiency and field goal attempts`
+                    ],
+                    'DST': [
+                        `Defense/Special Teams unit with potential for turnovers and scoring`,
+                        `Monitor weekly matchups and opponent offensive struggles`
+                    ]
+                };
+                
+                return contexts[position] || [
+                    `${position} for ${team} with fantasy potential in 2025 season`,
+                    `Keep an eye on usage trends and weekly opportunities`
+                ];
             };
 
             const fetchSleeperData = async (player) => {
@@ -3822,8 +3929,7 @@
                         <div className="space-y-4">
                             <div className="flex justify-center">
                                 <div className="inline-flex items-center space-x-2 bg-purple-600/20 px-3 py-2 rounded-lg">
-                                    <img src="https://www.fantasypros.com/images/logos/fp-logo-16.png" alt="FantasyPros" className="w-4 h-4" />
-                                    <span className="text-purple-300 font-medium">FantasyPros Data</span>
+                                    <span className="text-purple-300 font-medium">📊 Player Analysis</span>
                                 </div>
                             </div>
 
