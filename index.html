@@ -1127,15 +1127,20 @@
                             timestamp: new Date(data.timestamp).toLocaleTimeString()
                         });
                         
-                        // Replace current state with database state
+                        // Replace current state with database state, preserving playersData
                         this.state = {
                             ...this.getInitialState(), // Start with defaults
                             ...data.state, // Override with database state
+                            playersData: this.state.playersData || {}, // Preserve existing player data
                             lastUpdate: data.timestamp
                         };
                         
                         // Notify components to update UI
                         this.notify(false);
+                        
+                        // Also load player data for view-only mode
+                        console.log('🔄 [VIEW-ONLY] Loading player data...');
+                        await this.loadPlayersData();
                     } else {
                         console.warn('⚠️ [VIEW-ONLY] Failed to load from database:', response.status);
                     }
@@ -1167,6 +1172,8 @@
                     merged.currentPick = remoteState.currentPick;
                     merged.keepers = remoteState.keepers || {};
                     merged.recentPick = remoteState.recentPick;
+                    // Always preserve playersData in view-only mode
+                    merged.playersData = localState.playersData || {};
                 } else {
                     // Interactive mode: merge picks intelligently
                     const localPicks = localState.picks || [];
