@@ -1083,17 +1083,36 @@
             startDatabasePolling() {
                 console.log('🔄 Starting database polling for real-time sync');
                 
-                // Poll database every 1 second for real-time updates
+                // Poll database every 3 seconds for real-time updates (optimized for multiple users)
                 this.pollingInterval = setInterval(async () => {
                     try {
                         await this.pollDatabaseForUpdates();
+                        this.pollFailureCount = 0; // Reset failure count on success
                     } catch (error) {
                         console.error('❌ Error polling database:', error);
+                        this.pollFailureCount = (this.pollFailureCount || 0) + 1;
+                        
+                        // Implement exponential backoff on repeated failures
+                        if (this.pollFailureCount >= 3) {
+                            console.warn('⚠️ Multiple polling failures, temporarily slowing down');
+                            clearInterval(this.pollingInterval);
+                            setTimeout(() => {
+                                this.setupRealTimeSync(); // Restart with normal interval
+                            }, Math.min(this.pollFailureCount * 2000, 10000)); // Max 10 second delay
+                        }
                     }
-                }, 1000);
+                }, 3000);
             }
 
             async pollDatabaseForUpdates() {
+                // Rate limiting: prevent polling if we just polled recently
+                const now = Date.now();
+                if (this.lastPollTime && (now - this.lastPollTime) < 2000) {
+                    console.log('⏭️ Skipping poll - too soon since last request');
+                    return;
+                }
+                this.lastPollTime = now;
+
                 try {
                     const response = await fetch('/api/draft-state', {
                         method: 'GET',

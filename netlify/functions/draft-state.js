@@ -1,6 +1,21 @@
 // Netlify Function to serve draft state from Neon database
 const { neon } = require('@neondatabase/serverless');
 
+// Reuse database connection across requests for better performance
+let cachedConnection = null;
+let connectionExpiry = 0;
+const CONNECTION_TTL = 300000; // 5 minutes
+
+const getConnection = (databaseUrl) => {
+    const now = Date.now();
+    if (!cachedConnection || now > connectionExpiry) {
+        console.log('Creating new database connection');
+        cachedConnection = neon(databaseUrl);
+        connectionExpiry = now + CONNECTION_TTL;
+    }
+    return cachedConnection;
+};
+
 exports.handler = async (event, context) => {
     // Set CORS headers for all responses
     const headers = {
@@ -39,7 +54,7 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const sql = neon(databaseUrl);
+        const sql = getConnection(databaseUrl);
         const draftId = 'main'; // Default draft ID
 
         // Get draft state from database

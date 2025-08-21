@@ -1,6 +1,21 @@
 // Netlify Function to save draft archives to Neon database
 const { neon } = require('@neondatabase/serverless');
 
+// Reuse database connection across requests for better performance
+let cachedConnection = null;
+let connectionExpiry = 0;
+const CONNECTION_TTL = 300000; // 5 minutes
+
+const getConnection = (databaseUrl) => {
+    const now = Date.now();
+    if (!cachedConnection || now > connectionExpiry) {
+        console.log('Creating new database connection');
+        cachedConnection = neon(databaseUrl);
+        connectionExpiry = now + CONNECTION_TTL;
+    }
+    return cachedConnection;
+};
+
 exports.handler = async (event, context) => {
     // Set CORS headers for all responses
     const headers = {
@@ -50,7 +65,7 @@ exports.handler = async (event, context) => {
             };
         }
 
-        const sql = neon(databaseUrl);
+        const sql = getConnection(databaseUrl);
         const archive = data.archive;
 
         // Create archives table if it doesn't exist
