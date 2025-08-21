@@ -4826,25 +4826,38 @@
                 console.log('PlayerList - playersArray length:', playersArray.length);
                 const draftedPlayerIds = new Set(picks.map(pick => pick.playerId));
                 
-                // Get all keeper player IDs to exclude from available players
+                // Get all keeper player IDs and names to exclude from available players
                 const keeperPlayerIds = new Set();
+                const keeperPlayerNames = new Set();
                 console.log('Keepers object:', keepers);
                 Object.values(keepers || {}).forEach(teamKeepers => {
                     if (Array.isArray(teamKeepers)) {
                         teamKeepers.forEach(keeper => {
                             if (keeper) {
+                                console.log('Processing keeper:', keeper);
                                 // Try multiple possible ID fields
                                 const possibleIds = [keeper.playerId, keeper.player_id, keeper.id];
                                 const validId = possibleIds.find(id => id);
                                 if (validId) {
                                     keeperPlayerIds.add(validId);
-                                    console.log('Added keeper to exclusion list:', validId, keeper);
+                                    console.log('Added keeper ID to exclusion list:', validId);
+                                }
+                                
+                                // Also try name-based matching as fallback
+                                if (keeper.first_name && keeper.last_name) {
+                                    const fullName = `${keeper.first_name} ${keeper.last_name}`.toLowerCase();
+                                    keeperPlayerNames.add(fullName);
+                                    console.log('Added keeper name to exclusion list:', fullName);
+                                } else if (keeper.name) {
+                                    keeperPlayerNames.add(keeper.name.toLowerCase());
+                                    console.log('Added keeper name to exclusion list:', keeper.name);
                                 }
                             }
                         });
                     }
                 });
                 console.log('Total keeper player IDs to exclude:', keeperPlayerIds.size);
+                console.log('Total keeper player names to exclude:', keeperPlayerNames.size);
 
                 // Define offensive line positions to filter out
                 const offensiveLinePositions = ['C', 'G', 'T', 'OL', 'LG', 'RG', 'LT', 'RT', 'OT', 'OG'];
@@ -4859,7 +4872,11 @@
                         }
                         
                         // Filter out keepers - they should not be available to draft
-                        if (keeperPlayerIds.has(player.player_id)) {
+                        const playerIds = [player.player_id, player.id, player.playerId].filter(Boolean);
+                        const playerFullName = `${player.first_name || ''} ${player.last_name || ''}`.toLowerCase().trim();
+                        
+                        if (playerIds.some(id => keeperPlayerIds.has(id)) || keeperPlayerNames.has(playerFullName)) {
+                            console.log('Filtering out keeper:', player.first_name, player.last_name, 'IDs:', playerIds, 'Name:', playerFullName);
                             return false;
                         }
                         
