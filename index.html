@@ -4847,19 +4847,23 @@
                             return (a.position || '').localeCompare(b.position || '');
                         }
                         
-                        // Get player rankings for comparison
-                        const aRanking = getAccuratePlayerRankings(a);
-                        const bRanking = getAccuratePlayerRankings(b);
+                        // Simple ranking-based sorting using basic position hierarchy
+                        const getPositionRank = (pos) => {
+                            const positionRanks = {
+                                'QB': 1, 'RB': 2, 'WR': 3, 'TE': 4, 'K': 5, 'DEF': 6,
+                                'DT': 7, 'DE': 8, 'LB': 9, 'CB': 10, 'S': 11
+                            };
+                            return positionRanks[pos] || 999;
+                        };
                         
-                        // Sort by ranking (lower rank number = higher priority)
-                        const aRank = aRanking.overall || 999;
-                        const bRank = bRanking.overall || 999;
+                        const aRank = getPositionRank(a.position);
+                        const bRank = getPositionRank(b.position);
                         
                         if (aRank !== bRank) {
                             return aRank - bRank;
                         }
                         
-                        // Fallback to alphabetical if ranks are the same
+                        // Within same position, sort alphabetically for now
                         const aName = `${a.first_name || ''} ${a.last_name || ''}`;
                         const bName = `${b.first_name || ''} ${b.last_name || ''}`;
                         return aName.localeCompare(bName);
