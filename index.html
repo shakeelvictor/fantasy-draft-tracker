@@ -3189,30 +3189,46 @@
                 try {
                     console.log(`📰 Fetching real news for ${playerName} from multiple sources...`);
                     
-                    // Fantasy Football News API (aggregates ESPN, CBS, Yahoo, PFF)
-                    const newsResponse = await fetch('https://fantasyfootball-api.herokuapp.com/news');
-                    if (newsResponse.ok) {
-                        const newsData = await newsResponse.json();
-                        const playerNews = newsData.filter(item => 
-                            item.title.toLowerCase().includes(player.first_name.toLowerCase()) &&
-                            item.title.toLowerCase().includes(player.last_name.toLowerCase())
-                        ).slice(0, 3);
-                        
-                        playerNews.forEach(item => {
-                            news.push({
-                                title: item.title,
-                                source: item.source.toUpperCase(),
-                                url: item.url,
-                                isLink: true
-                            });
+                    // ESPN Fantasy Football News with direct links
+                    try {
+                        const espnUrl = `https://www.espn.com/nfl/player/_/name/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}`;
+                        news.push({
+                            title: `Latest ${playerName} news, stats, and analysis from ESPN`,
+                            source: 'ESPN',
+                            url: espnUrl,
+                            isLink: true
                         });
+                    } catch (error) {
+                        console.log('ESPN link generation failed');
                     }
                     
-                    // ESPN Direct Player News
-                    const espnNews = await fetchESPNPlayerNews(player);
-                    news.push(...espnNews);
+                    // Yahoo Sports Player Page
+                    try {
+                        const yahooUrl = `https://sports.yahoo.com/nfl/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}`;
+                        news.push({
+                            title: `${playerName} fantasy outlook and projections - Yahoo Sports`,
+                            source: 'Yahoo Sports',
+                            url: yahooUrl,
+                            isLink: true
+                        });
+                    } catch (error) {
+                        console.log('Yahoo link generation failed');
+                    }
                     
-                    // Reddit Fantasy Football
+                    // NFL.com Player Profile
+                    try {
+                        const nflUrl = `https://www.nfl.com/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}`;
+                        news.push({
+                            title: `Official ${playerName} player profile and latest updates`,
+                            source: 'NFL.com',
+                            url: nflUrl,
+                            isLink: true
+                        });
+                    } catch (error) {
+                        console.log('NFL.com link generation failed');
+                    }
+                    
+                    // Reddit Fantasy Football search
                     const redditNews = await fetchRedditFantasyNews(player);
                     news.push(...redditNews);
                     
@@ -3412,70 +3428,82 @@
                 };
             };
 
-            // Generate basic player context when no real news is available
+            // Generate meaningful player context with useful links
             const generatePlayerContext = (player) => {
                 const position = player.position;
                 const team = player.team || 'FA';
+                const playerName = `${player.first_name} ${player.last_name}`;
                 
-                const contexts = {
-                    'QB': [
-                        {
-                            title: `Starting quarterback for ${team} with strong fantasy upside this season`,
-                            source: 'Analysis',
-                            url: `https://www.espn.com/nfl/team/_/name/${team.toLowerCase()}`,
-                            isLink: false
-                        }
-                    ],
-                    'RB': [
-                        {
-                            title: `Running back for ${team} with potential for high-touch volume`,
-                            source: 'Analysis',
-                            url: `https://www.espn.com/nfl/team/_/name/${team.toLowerCase()}`,
-                            isLink: false
-                        }
-                    ],
-                    'WR': [
-                        {
-                            title: `Wide receiver for ${team} with opportunity for targets and red zone looks`,
-                            source: 'Analysis', 
-                            url: `https://www.espn.com/nfl/team/_/name/${team.toLowerCase()}`,
-                            isLink: false
-                        }
-                    ],
-                    'TE': [
-                        {
-                            title: `Tight end for ${team} in position to contribute in receiving game`,
-                            source: 'Analysis',
-                            url: `https://www.espn.com/nfl/team/_/name/${team.toLowerCase()}`,
-                            isLink: false
-                        }
-                    ],
-                    'K': [
-                        {
-                            title: `Kicker for ${team} with scoring opportunities based on team success`,
-                            source: 'Analysis',
-                            url: `https://www.espn.com/nfl/team/_/name/${team.toLowerCase()}`,
-                            isLink: false
-                        }
-                    ],
-                    'DST': [
-                        {
-                            title: `Defense/Special Teams unit with potential for turnovers and scoring`,
-                            source: 'Analysis',
-                            url: `https://www.espn.com/nfl/team/_/name/${team.toLowerCase()}`,
-                            isLink: false
-                        }
-                    ]
-                };
-                
-                return contexts[position] || [
+                // Generate player-specific fantasy analysis links
+                const fantasyAnalysisLinks = [
                     {
-                        title: `${position} for ${team} with fantasy potential in 2025 season`,
-                        source: 'Analysis',
-                        url: `https://www.espn.com/nfl/team/_/name/${team.toLowerCase()}`,
-                        isLink: false
+                        title: `${playerName} - Weekly Rankings & Start/Sit Advice`,
+                        source: 'FantasyPros',
+                        url: `https://www.fantasypros.com/nfl/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}.php`,
+                        isLink: true
+                    },
+                    {
+                        title: `${playerName} Player Profile & Fantasy Projections`,
+                        source: 'ESPN Fantasy',
+                        url: `https://fantasy.espn.com/football/players/projections/_/search/${encodeURIComponent(playerName)}`,
+                        isLink: true
+                    },
+                    {
+                        title: `${playerName} Target Share, Snap Count & Usage Analysis`,
+                        source: 'Player Profiler',
+                        url: `https://www.playerprofiler.com/nfl/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}/`,
+                        isLink: true
                     }
                 ];
+                
+                // Position-specific analysis
+                const positionAnalysis = {
+                    'QB': {
+                        title: `${playerName} passing yards, TD projections and strength of schedule`,
+                        source: 'Fantasy Analysis',
+                        url: `https://www.pro-football-reference.com/players/${player.last_name.charAt(0).toLowerCase()}/${player.last_name.toLowerCase()}${player.first_name.substring(0,2).toLowerCase()}01.htm`,
+                        isLink: true
+                    },
+                    'RB': {
+                        title: `${playerName} carry share, red zone touches and weekly outlook`,
+                        source: 'Fantasy Analysis', 
+                        url: `https://www.pro-football-reference.com/players/${player.last_name.charAt(0).toLowerCase()}/${player.last_name.toLowerCase()}${player.first_name.substring(0,2).toLowerCase()}01.htm`,
+                        isLink: true
+                    },
+                    'WR': {
+                        title: `${playerName} target share, air yards and reception projections`,
+                        source: 'Fantasy Analysis',
+                        url: `https://www.pro-football-reference.com/players/${player.last_name.charAt(0).toLowerCase()}/${player.last_name.toLowerCase()}${player.first_name.substring(0,2).toLowerCase()}01.htm`,
+                        isLink: true
+                    },
+                    'TE': {
+                        title: `${playerName} red zone usage, target competition and weekly ceiling`,
+                        source: 'Fantasy Analysis',
+                        url: `https://www.pro-football-reference.com/players/${player.last_name.charAt(0).toLowerCase()}/${player.last_name.toLowerCase()}${player.first_name.substring(0,2).toLowerCase()}01.htm`,
+                        isLink: true
+                    },
+                    'K': {
+                        title: `${team} kicker field goal attempts and scoring opportunities`,
+                        source: 'Kicker Analysis',
+                        url: `https://www.pro-football-reference.com/years/2024/opp.htm`,
+                        isLink: true
+                    },
+                    'DST': {
+                        title: `${team} defense sacks, takeaways and fantasy points allowed`,
+                        source: 'Defense Analysis',
+                        url: `https://www.pro-football-reference.com/years/2024/opp.htm`,
+                        isLink: true
+                    }
+                };
+                
+                // Return mix of fantasy analysis links and position-specific analysis
+                const result = [
+                    fantasyAnalysisLinks[0], // FantasyPros
+                    positionAnalysis[position] || positionAnalysis['WR'],
+                    fantasyAnalysisLinks[2] // Player Profiler for usage
+                ];
+                
+                return result.slice(0, 3);
             };
 
             const fetchSleeperData = async (player) => {
@@ -3756,6 +3784,10 @@
             // Generate projections based on position
             const generateProjections = (player) => {
                 const position = player.position;
+                
+                // Debug logging to help identify position issues
+                console.log(`🏈 Generating projections for ${player.first_name} ${player.last_name}, Position: "${position}"`);
+                
                 const projections = {
                     'QB': {
                         points: Math.floor(Math.random() * 100) + 200,
@@ -3779,8 +3811,8 @@
                     },
                     'K': {
                         points: Math.floor(Math.random() * 40) + 80,
-                        yards: 0,
-                        touchdowns: 0
+                        fieldGoals: Math.floor(Math.random() * 15) + 15,
+                        extraPoints: Math.floor(Math.random() * 20) + 25
                     },
                     'DST': {
                         points: Math.floor(Math.random() * 50) + 100,
@@ -3789,9 +3821,26 @@
                         fumbleRecoveries: Math.floor(Math.random() * 6) + 8,
                         defensiveTDs: Math.floor(Math.random() * 3) + 2,
                         safeties: Math.floor(Math.random() * 2) + 1
+                    },
+                    'DEF': {
+                        points: Math.floor(Math.random() * 50) + 100,
+                        sacks: Math.floor(Math.random() * 20) + 25,
+                        interceptions: Math.floor(Math.random() * 8) + 10,
+                        fumbleRecoveries: Math.floor(Math.random() * 6) + 8,
+                        defensiveTDs: Math.floor(Math.random() * 3) + 2,
+                        safeties: Math.floor(Math.random() * 2) + 1
                     }
                 };
-                return projections[position] || projections['WR'];
+                
+                // Handle defensive positions (DST, DEF, Defense, etc.)
+                if (position === 'DST' || position === 'DEF' || position === 'Defense' || position === 'D/ST') {
+                    console.log('✅ Using defensive projections for:', player.first_name, player.last_name);
+                    return projections['DST'];
+                }
+                
+                const result = projections[position] || projections['WR'];
+                console.log(`📊 Using ${position} projections:`, Object.keys(result));
+                return result;
             };
 
             // Consistent close handler like other modals
@@ -3996,14 +4045,18 @@
                                                     </div>
                                                 </div>
                                             ) : player.position === 'K' ? (
-                                                <div className="grid grid-cols-2 gap-4 text-center">
+                                                <div className="grid grid-cols-3 gap-4 text-center">
                                                     <div>
                                                         <div className="text-xl font-bold text-green-400">{fantasyProData.projections.points}</div>
                                                         <div className="text-xs text-slate-400">Fantasy Points</div>
                                                     </div>
                                                     <div>
-                                                        <div className="text-xl font-bold text-blue-400">~{Math.floor(fantasyProData.projections.points / 8)}</div>
-                                                        <div className="text-xs text-slate-400">Est. FGs Made</div>
+                                                        <div className="text-xl font-bold text-blue-400">{fantasyProData.projections.fieldGoals || Math.floor(fantasyProData.projections.points / 8)}</div>
+                                                        <div className="text-xs text-slate-400">Field Goals</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-yellow-400">{fantasyProData.projections.extraPoints || Math.floor(fantasyProData.projections.points / 3)}</div>
+                                                        <div className="text-xs text-slate-400">Extra Points</div>
                                                     </div>
                                                 </div>
                                             ) : (
