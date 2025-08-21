@@ -3201,32 +3201,57 @@
             };
 
             const handleClose = () => {
+                console.log('Modal handleClose called');
                 setFadeOut(true);
                 setTimeout(() => {
+                    console.log('Modal calling onClose after timeout');
                     onClose();
                 }, 300);
             };
 
             const handleDraftPlayer = () => {
-                console.log('Draft button clicked:', {
+                console.log('=== DRAFT BUTTON CLICKED ===');
+                console.log('Draft conditions:', {
                     canDraft,
-                    currentPick,
+                    hasCurrentPick: !!currentPick,
+                    currentPickTeam: currentPick?.teamId,
+                    currentPickRound: currentPick?.round,
                     playerId: player.player_id,
-                    teamId: currentPick?.teamId,
+                    playerName: `${player.first_name} ${player.last_name}`,
                     isViewOnly,
-                    isDrafted
+                    isDrafted,
+                    makePickFunction: typeof makePick
                 });
                 
+                if (!currentPick) {
+                    console.error('No current pick available');
+                    return;
+                }
+                
+                if (isDrafted) {
+                    console.error('Player already drafted');
+                    return;
+                }
+                
+                if (isViewOnly) {
+                    console.error('In view-only mode');
+                    return;
+                }
+                
                 if (canDraft && currentPick) {
+                    console.log('Attempting to make pick...');
                     try {
                         makePick(player.player_id, currentPick.teamId, false);
-                        console.log('makePick called successfully');
+                        console.log('✅ makePick called successfully');
                         handleClose();
                     } catch (error) {
-                        console.error('Error calling makePick:', error);
+                        console.error('❌ Error calling makePick:', error);
                     }
                 } else {
-                    console.log('Cannot draft - conditions not met');
+                    console.log('❌ Cannot draft - conditions not met:', {
+                        canDraft,
+                        currentPick: !!currentPick
+                    });
                 }
             };
 
@@ -3235,8 +3260,20 @@
             const fullName = `${player.first_name} ${player.last_name}`;
 
             return (
-                <div className={`player-overlay ${fadeOut ? 'fade-out' : ''}`} onClick={handleClose}>
-                    <div className="player-overlay-card" onClick={(e) => e.stopPropagation()}>
+                <div 
+                    className={`player-overlay ${fadeOut ? 'fade-out' : ''}`} 
+                    onClick={(e) => {
+                        console.log('Overlay background clicked');
+                        handleClose();
+                    }}
+                >
+                    <div 
+                        className="player-overlay-card" 
+                        onClick={(e) => {
+                            console.log('Modal card clicked - preventing close');
+                            e.stopPropagation();
+                        }}
+                    >
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center space-x-3">
                                 <img
@@ -3259,7 +3296,11 @@
                                 </div>
                             </div>
                             <button
-                                onClick={handleClose}
+                                onClick={(e) => {
+                                    console.log('X button clicked');
+                                    e.stopPropagation();
+                                    handleClose();
+                                }}
                                 className="text-slate-400 hover:text-white text-2xl font-bold"
                             >
                                 ×
@@ -4817,6 +4858,7 @@
             };
 
             const handleFantasyProModalClose = () => {
+                console.log('App handleFantasyProModalClose called');
                 setShowFantasyProModal(false);
                 setSelectedPlayerForModal(null);
             };
