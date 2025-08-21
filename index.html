@@ -3111,17 +3111,24 @@
                             dataSource = 'Fallback Analysis';
                         }
                         
+                        // Helper function to get round from ADP
+                        const getADPRound = (adp) => {
+                            const round = Math.ceil(adp / 12); // 12-team league assumption
+                            const pick = ((adp - 1) % 12) + 1;
+                            return `${round}.${pick.toString().padStart(2, '0')} (${adp.toFixed(1)})`;
+                        };
+
                         // Merge news and ranking data
                         const finalData = {
                             ...expertData,
                             ranking: `#${playerRanking.overall}`,
-                            tier: `Tier ${playerRanking.tier}`,
-                            adp: playerRanking.adp.toFixed(1),
+                            tier: `Tier ${playerRanking.tier} (${player.position})`,
+                            adp: getADPRound(playerRanking.adp),
                             expertNotes: latestNews,
                             dataSource: `${playerRanking.source} + Real News`,
                             lastUpdated: new Date().toISOString(),
                             newsCount: latestNews.length,
-                            positionRank: playerRanking.position
+                            positionRank: `${player.position}${playerRanking.position}`
                         };
                         
                         setFantasyProData(finalData);
@@ -3777,8 +3784,11 @@
                     },
                     'DST': {
                         points: Math.floor(Math.random() * 50) + 100,
-                        yards: 0,
-                        touchdowns: Math.floor(Math.random() * 3) + 2
+                        sacks: Math.floor(Math.random() * 20) + 25,
+                        interceptions: Math.floor(Math.random() * 8) + 10,
+                        fumbleRecoveries: Math.floor(Math.random() * 6) + 8,
+                        defensiveTDs: Math.floor(Math.random() * 3) + 2,
+                        safeties: Math.floor(Math.random() * 2) + 1
                     }
                 };
                 return projections[position] || projections['WR'];
@@ -3958,20 +3968,60 @@
                                                 <span className="mr-2">📊</span>
                                                 2025 Projections
                                             </h3>
-                                            <div className="grid grid-cols-3 gap-4 text-center">
-                                                <div>
-                                                    <div className="text-xl font-bold text-green-400">{fantasyProData.projections.points}</div>
-                                                    <div className="text-xs text-slate-400">Fantasy Points</div>
+                                            {player.position === 'DST' ? (
+                                                <div className="grid grid-cols-3 gap-3 text-center">
+                                                    <div>
+                                                        <div className="text-xl font-bold text-green-400">{fantasyProData.projections.points}</div>
+                                                        <div className="text-xs text-slate-400">Fantasy Points</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-blue-400">{fantasyProData.projections.sacks}</div>
+                                                        <div className="text-xs text-slate-400">Sacks</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-yellow-400">{fantasyProData.projections.interceptions}</div>
+                                                        <div className="text-xs text-slate-400">Interceptions</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-purple-400">{fantasyProData.projections.fumbleRecoveries}</div>
+                                                        <div className="text-xs text-slate-400">Fumble Rec.</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-red-400">{fantasyProData.projections.defensiveTDs}</div>
+                                                        <div className="text-xs text-slate-400">Defensive TDs</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-orange-400">{fantasyProData.projections.safeties}</div>
+                                                        <div className="text-xs text-slate-400">Safeties</div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="text-xl font-bold text-blue-400">{fantasyProData.projections.yards}</div>
-                                                    <div className="text-xs text-slate-400">Total Yards</div>
+                                            ) : player.position === 'K' ? (
+                                                <div className="grid grid-cols-2 gap-4 text-center">
+                                                    <div>
+                                                        <div className="text-xl font-bold text-green-400">{fantasyProData.projections.points}</div>
+                                                        <div className="text-xs text-slate-400">Fantasy Points</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-blue-400">~{Math.floor(fantasyProData.projections.points / 8)}</div>
+                                                        <div className="text-xs text-slate-400">Est. FGs Made</div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="text-xl font-bold text-yellow-400">{fantasyProData.projections.touchdowns}</div>
-                                                    <div className="text-xs text-slate-400">Touchdowns</div>
+                                            ) : (
+                                                <div className="grid grid-cols-3 gap-4 text-center">
+                                                    <div>
+                                                        <div className="text-xl font-bold text-green-400">{fantasyProData.projections.points}</div>
+                                                        <div className="text-xs text-slate-400">Fantasy Points</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-blue-400">{fantasyProData.projections.yards}</div>
+                                                        <div className="text-xs text-slate-400">Total Yards</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xl font-bold text-yellow-400">{fantasyProData.projections.touchdowns}</div>
+                                                        <div className="text-xs text-slate-400">Touchdowns</div>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -4745,7 +4795,8 @@
                                                             {fullName}
                                                         </div>
                                                         <div className="text-slate-400 text-xs mt-1">
-                                                            {player.team || 'FA'} • {player.years_exp || 0} years • #{player.number || '--'}
+                                                            {player.team || 'FA'} • {player.position}
+                                                            {player.number && player.number !== '0' ? ` • #${player.number}` : ''}
                                                         </div>
                                                     </div>
 
