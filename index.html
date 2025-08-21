@@ -700,6 +700,31 @@
             background: rgba(102, 126, 234, 0.1);
         }
 
+        /* Team column highlighting */
+        .team-column {
+            position: relative;
+        }
+
+        .team-column.highlighted {
+            background: rgba(255, 235, 59, 0.05);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 235, 59, 0.2);
+        }
+
+        .team-header {
+            position: relative;
+            user-select: none;
+        }
+
+        .team-header:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .team-header:active {
+            transform: scale(0.98);
+        }
+
         /* View-only mode indicator */
         .view-only-banner {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -2944,7 +2969,7 @@
         };
 
         // Draft Board Component
-        const DraftBoard = memo(() => {
+        const DraftBoard = memo(({ highlightedTeam, onTeamClick }) => {
             const {
                 teams,
                 picks,
@@ -3062,14 +3087,21 @@
                                     : `repeat(${safeTeams.slice(0, safeDraftSettings.teamCount).length}, minmax(200px, 1fr))`
                             }}
                         >
-                            {safeTeams.slice(0, safeDraftSettings.teamCount).map(team => (
-                                <div key={team.id} className="team-column">
+                            {safeTeams.slice(0, safeDraftSettings.teamCount).map(team => {
+                                const isHighlighted = highlightedTeam === team.id;
+                                return (
+                                <div 
+                                    key={team.id} 
+                                    className={`team-column transition-all duration-300 ${isHighlighted ? 'ring-2 ring-yellow-400 ring-opacity-60 bg-yellow-400 bg-opacity-5' : ''}`}
+                                >
                                     <div
-                                        className="team-header glass p-2 sm:p-4 rounded-t-lg text-center font-semibold text-xs sm:text-sm mb-2 sm:mb-3"
+                                        className={`team-header glass p-2 sm:p-4 rounded-t-lg text-center font-semibold text-xs sm:text-sm mb-2 sm:mb-3 cursor-pointer transition-all duration-200 hover:scale-105 hover:brightness-110 ${isHighlighted ? 'ring-2 ring-yellow-400 shadow-lg' : ''}`}
                                         style={{
                                             background: `linear-gradient(135deg, ${team.color}40, ${team.color}20)`,
                                             borderTop: `3px solid ${team.color}`
                                         }}
+                                        onClick={() => onTeamClick(team.id)}
+                                        title={`Click to highlight ${team.name}'s column`}
                                     >
                                         <div className="text-white font-bold text-sm sm:text-base">{team.name}</div>
                                         <div className="text-slate-300 text-xs mt-1 hidden sm:block">{team.owner}</div>
@@ -3152,7 +3184,8 @@
                                         })}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -4225,6 +4258,7 @@
             const [showPlayerOverlay, setShowPlayerOverlay] = useState(false);
             const [showDraftComplete, setShowDraftComplete] = useState(false);
             const [shownPickIds, setShownPickIds] = useState(new Set());
+            const [highlightedTeam, setHighlightedTeam] = useState(null);
 
             // Load players on mount
             useEffect(() => {
@@ -4314,7 +4348,10 @@
 
                         {/* Main Content */}
                         <div className="space-y-4 sm:space-y-8">
-                            <DraftBoard />
+                            <DraftBoard 
+                                highlightedTeam={highlightedTeam} 
+                                onTeamClick={(teamId) => setHighlightedTeam(teamId === highlightedTeam ? null : teamId)}
+                            />
                         </div>
 
                         {/* Player Panel - Hidden in view-only mode */}
