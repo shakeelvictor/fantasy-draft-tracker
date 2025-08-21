@@ -2145,6 +2145,51 @@
                 console.log('✅ Draft board reset successfully');
             }
 
+            async deleteArchivedDraft(draftId) {
+                console.log('🗑️ Deleting archived draft:', draftId);
+                
+                const draft = this.state.archivedDrafts.find(d => d.id === draftId);
+                if (!draft) {
+                    showToast('Archive not found', 'error');
+                    return false;
+                }
+
+                try {
+                    // Delete from database first
+                    const response = await fetch(`/api/delete-archive?id=${encodeURIComponent(draftId)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        console.log('✅ Archive deleted from database successfully');
+                    } else {
+                        console.warn('⚠️ Failed to delete archive from database, but removing locally');
+                    }
+                } catch (error) {
+                    console.error('❌ Error deleting archive from database:', error);
+                    // Continue with local deletion even if database deletion fails
+                }
+
+                // Remove from local state and localStorage
+                const updatedArchives = this.state.archivedDrafts.filter(d => d.id !== draftId);
+                
+                this.setState({
+                    archivedDrafts: updatedArchives,
+                    // If we're currently viewing this draft, reset the current draft ID
+                    currentDraftId: this.state.currentDraftId === draftId ? null : this.state.currentDraftId
+                });
+
+                // Update localStorage
+                localStorage.setItem('fantasy-draft-archives', JSON.stringify(updatedArchives));
+
+                showToast(`Archive "${draft.name}" deleted successfully`, 'success');
+                console.log('✅ Archive deleted successfully');
+                return true;
+            }
+
             async archiveDraft() {
                 const { draftSettings, teams, picks, playersData } = this.state;
 
@@ -2486,7 +2531,8 @@
                 clearDraftCompleted: () => draftStore.setState({ draftJustCompleted: false }),
                 setKeeper: (teamId, round, playerId) => draftStore.setKeeper(teamId, round, playerId),
                 setViewOnlyMode: (isViewOnly) => draftStore.setViewOnlyMode(isViewOnly),
-                resetDraft: () => draftStore.resetDraft()
+                resetDraft: () => draftStore.resetDraft(),
+                deleteArchivedDraft: (draftId) => draftStore.deleteArchivedDraft(draftId)
             };
         }
 
@@ -3512,14 +3558,83 @@
             );
         };
 
-        // Archives Modal Component
-        const ArchivesModal = ({ onClose }) => {
-            const { archivedDrafts, loadArchivedDraft } = useDraftStore();
+        // Confirmation Dialog Component
+        const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Confirm", cancelText = "Cancel", type = "danger" }) => {
             const [closing, setClosing] = useState(false);
 
             const handleClose = () => {
                 setClosing(true);
+                setTimeout(() => {
+                    setClosing(false);
+                    onClose();
+                }, 300);
+            };
+
+            const handleConfirm = () => {
+                onConfirm();
+                handleClose();
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className={`glass-dark rounded-xl p-6 max-w-md w-full shadow-2xl ${closing ? 'modal-exit' : 'modal-enter'}`}>
+                        <h3 className="text-xl font-bold text-white mb-4">{title}</h3>
+                        <p className="text-slate-300 mb-6">{message}</p>
+                        
+                        <div className="flex space-x-3">
+                            <button
+                                onClick={handleClose}
+                                className="flex-1 px-4 py-2 rounded-lg glass text-white hover:bg-slate-600 transition-all"
+                            >
+                                {cancelText}
+                            </button>
+                            <button
+                                onClick={handleConfirm}
+                                className={`flex-1 px-4 py-2 rounded-lg text-white transition-all ${
+                                    type === 'danger' 
+                                        ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800' 
+                                        : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
+                                }`}
+                            >
+                                {confirmText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Archives Modal Component
+        const ArchivesModal = ({ onClose }) => {
+            const { archivedDrafts, loadArchivedDraft, deleteArchivedDraft } = useDraftStore();
+            const [closing, setClosing] = useState(false);
+            const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, draftId: null, draftName: '' });
+
+            const handleClose = () => {
+                setClosing(true);
                 setTimeout(onClose, 300);
+            };
+
+            const handleDeleteClick = (draft, event) => {
+                event.stopPropagation(); // Prevent triggering load action
+                setConfirmDialog({
+                    isOpen: true,
+                    draftId: draft.id,
+                    draftName: draft.name
+                });
+            };
+
+            const handleDeleteConfirm = async () => {
+                if (confirmDialog.draftId) {
+                    await deleteArchivedDraft(confirmDialog.draftId);
+                }
+                setConfirmDialog({ isOpen: false, draftId: null, draftName: '' });
+            };
+
+            const handleDeleteCancel = () => {
+                setConfirmDialog({ isOpen: false, draftId: null, draftName: '' });
             };
 
             return (
@@ -3541,15 +3656,26 @@
                                                 {draft.picks.length} picks
                                             </p>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                loadArchivedDraft(draft.id);
-                                                handleClose();
-                                            }}
-                                            className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all text-sm sm:text-base w-full sm:w-auto"
-                                        >
-                                            Load Draft
-                                        </button>
+                                        <div className="flex space-x-2 w-full sm:w-auto">
+                                            <button
+                                                onClick={() => {
+                                                    loadArchivedDraft(draft.id);
+                                                    handleClose();
+                                                }}
+                                                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all text-sm sm:text-base"
+                                            >
+                                                Load Draft
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDeleteClick(draft, e)}
+                                                className="px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all text-sm sm:text-base"
+                                                title="Delete Archive"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -3566,6 +3692,18 @@
                             </button>
                         </div>
                     </div>
+
+                    {/* Confirmation Dialog */}
+                    <ConfirmationDialog
+                        isOpen={confirmDialog.isOpen}
+                        onClose={handleDeleteCancel}
+                        onConfirm={handleDeleteConfirm}
+                        title="Delete Archive"
+                        message={`Are you sure you want to delete "${confirmDialog.draftName}"? This action cannot be undone.`}
+                        confirmText="Delete"
+                        cancelText="Cancel"
+                        type="danger"
+                    />
                 </div>
             );
         };

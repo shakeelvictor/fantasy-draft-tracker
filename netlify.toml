@@ -51,6 +51,11 @@
   to = "/.netlify/functions/load-archives"
   status = 200
 
+[[redirects]]
+  from = "/api/delete-archive"
+  to = "/.netlify/functions/delete-archive"
+  status = 200
+
 [build.environment]
   NODE_VERSION = "18"
 
