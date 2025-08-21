@@ -790,10 +790,6 @@
 
         /* View-only mobile specific styling */
         .view-only-mobile {
-            position: relative !important;
-            transform: none !important;
-            width: 100% !important;
-            max-height: none !important;
             border-radius: 0.5rem;
             margin: 1rem 0;
         }
@@ -2178,12 +2174,17 @@
                     const optimizedPlayers = {};
                     let processedCount = 0;
 
+                    // Define offensive line positions to filter out
+                    const offensiveLinePositions = ['C', 'G', 'T', 'OL', 'LG', 'RG', 'LT', 'RT', 'OT', 'OG'];
+
                     Object.entries(players).forEach(([id, player]) => {
                         // Only keep essential fields to reduce storage size
                         // Include active players and those with valid names/positions
+                        // Exclude offensive line players
                         if (player && player.first_name && player.last_name &&
                             (player.active !== false) && // Include if active is undefined or true
-                            player.position && player.position !== 'N/A') {
+                            player.position && player.position !== 'N/A' &&
+                            !offensiveLinePositions.includes(player.position)) { // Filter out offensive line
                             optimizedPlayers[id] = {
                                 first_name: player.first_name,
                                 last_name: player.last_name,
@@ -4800,9 +4801,18 @@
                 console.log('PlayerList - playersArray length:', playersArray.length);
                 const draftedPlayerIds = new Set(picks.map(pick => pick.playerId));
 
+                // Define offensive line positions to filter out
+                const offensiveLinePositions = ['C', 'G', 'T', 'OL', 'LG', 'RG', 'LT', 'RT', 'OT', 'OG'];
+
                 const result = playersArray
                     .filter(player => {
                         if (!player) return false;
+                        
+                        // Filter out offensive line players
+                        if (offensiveLinePositions.includes(player.position)) {
+                            return false;
+                        }
+                        
                         // Remove active check since optimized data doesn't include this field
 
                         if (showAvailableOnly && draftedPlayerIds.has(player.player_id)) {
@@ -4836,6 +4846,20 @@
                         if (a.position !== b.position) {
                             return (a.position || '').localeCompare(b.position || '');
                         }
+                        
+                        // Get player rankings for comparison
+                        const aRanking = getAccuratePlayerRankings(a);
+                        const bRanking = getAccuratePlayerRankings(b);
+                        
+                        // Sort by ranking (lower rank number = higher priority)
+                        const aRank = aRanking.overall || 999;
+                        const bRank = bRanking.overall || 999;
+                        
+                        if (aRank !== bRank) {
+                            return aRank - bRank;
+                        }
+                        
+                        // Fallback to alphabetical if ranks are the same
                         const aName = `${a.first_name || ''} ${a.last_name || ''}`;
                         const bName = `${b.first_name || ''} ${b.last_name || ''}`;
                         return aName.localeCompare(bName);
@@ -4905,11 +4929,11 @@
             if (isMobile) {
                 return (
                     <>
-                        {!isViewOnly && <PanelToggle />}
+                        <PanelToggle />
                         <div
                             className={`mobile-player-panel glass-dark p-4 ${
-                                showPlayerPanel || isViewOnly ? 'open slide-panel-enter-mobile' : ''
-                            } ${isViewOnly ? 'view-only-mobile view-only-panel-always-visible' : ''}`}
+                                showPlayerPanel ? 'open slide-panel-enter-mobile' : ''
+                            } ${isViewOnly ? 'view-only-mobile' : ''}`}
                         >
                             {isViewOnly && (
                                 <div className="view-only-header mb-4">
