@@ -3625,7 +3625,12 @@
             };
             
             // Initialize rankings when the script loads
-            initializeRankingsFromJSON();
+            initializeRankingsFromJSON().then(() => {
+                // Trigger a re-render of player list after rankings are loaded
+                if (window.React && window.forcePlayerListUpdate) {
+                    window.forcePlayerListUpdate();
+                }
+            });
             
             // Get realistic player rankings based on FantasyPros 2025 data
             const getAccuratePlayerRankings = (player) => {
@@ -4777,6 +4782,15 @@
                 keepers
             } = useDraftStore();
 
+            // Add state to force re-render when rankings are loaded
+            const [rankingsLoaded, setRankingsLoaded] = React.useState(false);
+            
+            // Expose update function globally
+            React.useEffect(() => {
+                window.forcePlayerListUpdate = () => setRankingsLoaded(prev => !prev);
+                return () => { window.forcePlayerListUpdate = null; };
+            }, []);
+
             // Debug: Log player data in PlayerList
             console.log('PlayerList - playersData keys count:', Object.keys(playersData || {}).length);
             console.log('PlayerList - playersData sample:', Object.keys(playersData || {}).slice(0, 3));
@@ -4850,18 +4864,40 @@
                             return (a.position || '').localeCompare(b.position || '');
                         }
                         
-                        // Use actual fantasy rankings for sorting
+                        // Use actual fantasy rankings for sorting with fallback
                         let aRank = 999, bRank = 999;
                         
                         try {
                             if (window.getAccuratePlayerRankings) {
                                 const aRanking = window.getAccuratePlayerRankings(a);
                                 const bRanking = window.getAccuratePlayerRankings(b);
-                                aRank = aRanking.overall || 999;
-                                bRank = bRanking.overall || 999;
+                                
+                                // Use overall rank if available, otherwise use positional fallback
+                                aRank = (aRanking.overall && aRanking.overall < 500) ? aRanking.overall : getPositionBasedRank(a);
+                                bRank = (bRanking.overall && bRanking.overall < 500) ? bRanking.overall : getPositionBasedRank(b);
+                            } else {
+                                aRank = getPositionBasedRank(a);
+                                bRank = getPositionBasedRank(b);
                             }
                         } catch (error) {
-                            console.warn('Error getting player rankings:', error);
+                            aRank = getPositionBasedRank(a);
+                            bRank = getPositionBasedRank(b);
+                        }
+                        
+                        // Simple position-based ranking fallback
+                        function getPositionBasedRank(player) {
+                            const posBaseline = {
+                                'QB': 100, 'RB': 200, 'WR': 300, 'TE': 400, 
+                                'K': 500, 'DEF': 600, 'DT': 700, 'DE': 800, 
+                                'LB': 900, 'CB': 1000, 'S': 1100
+                            };
+                            const baseline = posBaseline[player.position] || 999;
+                            // Add some variation based on name hash for consistent ordering
+                            const nameHash = (player.first_name + player.last_name).split('').reduce((a, b) => {
+                                a = ((a << 5) - a) + b.charCodeAt(0);
+                                return a & a;
+                            }, 0);
+                            return baseline + Math.abs(nameHash % 50);
                         }
                         
                         // Sort by ranking (lower rank number = higher priority)
@@ -4878,7 +4914,7 @@
 
                 console.log('PlayerList - filtered players count:', result.length);
                 return result;
-            }, [playersData, selectedPosition, searchQuery, showAvailableOnly, picks]);
+            }, [playersData, selectedPosition, searchQuery, showAvailableOnly, picks, rankingsLoaded]);
 
             const getPositionClass = (position) => {
                 const positionMap = {
