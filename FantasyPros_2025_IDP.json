@@ -1,0 +1,1892 @@
+[
+  {
+    "RK":1,
+    "TIERS":1,
+    "PLAYER NAME":"Zaire Franklin",
+    "TEAM":"IND",
+    "POS":"LB1",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":2,
+    "TIERS":1,
+    "PLAYER NAME":"Roquan Smith",
+    "TEAM":"BAL",
+    "POS":"LB2",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":3,
+    "TIERS":2,
+    "PLAYER NAME":"Zack Baun",
+    "TEAM":"PHI",
+    "POS":"LB3",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":4,
+    "TIERS":2,
+    "PLAYER NAME":"Fred Warner",
+    "TEAM":"SF",
+    "POS":"LB4",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":5,
+    "TIERS":2,
+    "PLAYER NAME":"Myles Garrett",
+    "TEAM":"CLE",
+    "POS":"DE1",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":6,
+    "TIERS":2,
+    "PLAYER NAME":"Maxx Crosby",
+    "TEAM":"LV",
+    "POS":"DE2",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":7,
+    "TIERS":2,
+    "PLAYER NAME":"T.J. Edwards",
+    "TEAM":"CHI",
+    "POS":"LB5",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":8,
+    "TIERS":2,
+    "PLAYER NAME":"Aidan Hutchinson",
+    "TEAM":"DET",
+    "POS":"DE3",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":9,
+    "TIERS":2,
+    "PLAYER NAME":"Foyesade Oluokun",
+    "TEAM":"JAC",
+    "POS":"LB6",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":10,
+    "TIERS":3,
+    "PLAYER NAME":"Ernest Jones IV",
+    "TEAM":"SEA",
+    "POS":"LB7",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":11,
+    "TIERS":3,
+    "PLAYER NAME":"Jamien Sherwood",
+    "TEAM":"NYJ",
+    "POS":"LB8",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":12,
+    "TIERS":3,
+    "PLAYER NAME":"Terrel Bernard",
+    "TEAM":"BUF",
+    "POS":"LB9",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":13,
+    "TIERS":3,
+    "PLAYER NAME":"Nick Bosa",
+    "TEAM":"SF",
+    "POS":"DE4",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":14,
+    "TIERS":3,
+    "PLAYER NAME":"Brian Branch",
+    "TEAM":"DET",
+    "POS":"S1",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":15,
+    "TIERS":3,
+    "PLAYER NAME":"Kyle Hamilton",
+    "TEAM":"BAL",
+    "POS":"S2",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":16,
+    "TIERS":3,
+    "PLAYER NAME":"Alex Singleton",
+    "TEAM":"DEN",
+    "POS":"LB10",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":17,
+    "TIERS":3,
+    "PLAYER NAME":"T.J. Watt",
+    "TEAM":"PIT",
+    "POS":"LB11",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":18,
+    "TIERS":4,
+    "PLAYER NAME":"Budda Baker",
+    "TEAM":"ARI",
+    "POS":"S3",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":19,
+    "TIERS":4,
+    "PLAYER NAME":"Robert Spillane",
+    "TEAM":"NE",
+    "POS":"LB12",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":20,
+    "TIERS":4,
+    "PLAYER NAME":"Logan Wilson",
+    "TEAM":"CIN",
+    "POS":"LB13",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":21,
+    "TIERS":4,
+    "PLAYER NAME":"Blake Cashman",
+    "TEAM":"MIN",
+    "POS":"LB14",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":22,
+    "TIERS":4,
+    "PLAYER NAME":"Derwin James Jr.",
+    "TEAM":"LAC",
+    "POS":"S4",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":23,
+    "TIERS":4,
+    "PLAYER NAME":"Bobby Wagner",
+    "TEAM":"WAS",
+    "POS":"LB15",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":24,
+    "TIERS":4,
+    "PLAYER NAME":"Micah Parsons",
+    "TEAM":"DAL",
+    "POS":"LB16",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":25,
+    "TIERS":4,
+    "PLAYER NAME":"Jordyn Brooks",
+    "TEAM":"MIA",
+    "POS":"LB17",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":26,
+    "TIERS":5,
+    "PLAYER NAME":"Kaden Elliss",
+    "TEAM":"ATL",
+    "POS":"LB18",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":27,
+    "TIERS":5,
+    "PLAYER NAME":"Antoine Winfield Jr.",
+    "TEAM":"TB",
+    "POS":"S5",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":28,
+    "TIERS":5,
+    "PLAYER NAME":"Daiyan Henley",
+    "TEAM":"LAC",
+    "POS":"LB19",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":29,
+    "TIERS":5,
+    "PLAYER NAME":"Edgerrin Cooper",
+    "TEAM":"GB",
+    "POS":"LB20",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":30,
+    "TIERS":5,
+    "PLAYER NAME":"Lavonte David",
+    "TEAM":"TB",
+    "POS":"LB21",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":31,
+    "TIERS":5,
+    "PLAYER NAME":"Jessie Bates III",
+    "TEAM":"ATL",
+    "POS":"S6",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":32,
+    "TIERS":5,
+    "PLAYER NAME":"Azeez Al-Shaair",
+    "TEAM":"HOU",
+    "POS":"LB22",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":33,
+    "TIERS":5,
+    "PLAYER NAME":"Will Anderson Jr.",
+    "TEAM":"HOU",
+    "POS":"DE5",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":34,
+    "TIERS":5,
+    "PLAYER NAME":"Julian Love",
+    "TEAM":"SEA",
+    "POS":"S7",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":35,
+    "TIERS":5,
+    "PLAYER NAME":"Bobby Okereke",
+    "TEAM":"NYG",
+    "POS":"LB23",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":36,
+    "TIERS":6,
+    "PLAYER NAME":"Quay Walker",
+    "TEAM":"GB",
+    "POS":"LB24",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":37,
+    "TIERS":6,
+    "PLAYER NAME":"Nick Bolton",
+    "TEAM":"KC",
+    "POS":"LB25",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":38,
+    "TIERS":6,
+    "PLAYER NAME":"Frankie Luvu",
+    "TEAM":"WAS",
+    "POS":"LB26",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":39,
+    "TIERS":6,
+    "PLAYER NAME":"Jack Campbell",
+    "TEAM":"DET",
+    "POS":"LB27",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":40,
+    "TIERS":6,
+    "PLAYER NAME":"Jaquan Brisker",
+    "TEAM":"CHI",
+    "POS":"S8",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":41,
+    "TIERS":6,
+    "PLAYER NAME":"Travis Hunter",
+    "TEAM":"JAC",
+    "POS":"CB1",
+    "BYE WEEK":"8",
+    "SOS SEASON":"4 out of 5 stars",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":42,
+    "TIERS":6,
+    "PLAYER NAME":"Grant Delpit",
+    "TEAM":"CLE",
+    "POS":"S9",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":43,
+    "TIERS":6,
+    "PLAYER NAME":"Tyler Nubin",
+    "TEAM":"NYG",
+    "POS":"S10",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":44,
+    "TIERS":6,
+    "PLAYER NAME":"Carson Schwesinger",
+    "TEAM":"CLE",
+    "POS":"LB28",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":45,
+    "TIERS":6,
+    "PLAYER NAME":"Danielle Hunter",
+    "TEAM":"HOU",
+    "POS":"DE6",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":46,
+    "TIERS":6,
+    "PLAYER NAME":"Joshua Metellus",
+    "TEAM":"MIN",
+    "POS":"S11",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":47,
+    "TIERS":6,
+    "PLAYER NAME":"Quincy Williams",
+    "TEAM":"NYJ",
+    "POS":"LB29",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":48,
+    "TIERS":6,
+    "PLAYER NAME":"Jeremy Chinn",
+    "TEAM":"LV",
+    "POS":"S12",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":49,
+    "TIERS":6,
+    "PLAYER NAME":"Xavier McKinney",
+    "TEAM":"GB",
+    "POS":"S13",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":50,
+    "TIERS":6,
+    "PLAYER NAME":"Brian Burns",
+    "TEAM":"NYG",
+    "POS":"DE7",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":51,
+    "TIERS":6,
+    "PLAYER NAME":"Brandon Jones",
+    "TEAM":"DEN",
+    "POS":"S14",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":52,
+    "TIERS":7,
+    "PLAYER NAME":"DeShon Elliott",
+    "TEAM":"PIT",
+    "POS":"S15",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":53,
+    "TIERS":7,
+    "PLAYER NAME":"Kevin Byard III",
+    "TEAM":"CHI",
+    "POS":"S16",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":54,
+    "TIERS":7,
+    "PLAYER NAME":"Patrick Queen",
+    "TEAM":"PIT",
+    "POS":"LB30",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":55,
+    "TIERS":7,
+    "PLAYER NAME":"Trey Hendrickson",
+    "TEAM":"CIN",
+    "POS":"DE8",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":56,
+    "TIERS":7,
+    "PLAYER NAME":"Kyle Dugger",
+    "TEAM":"NE",
+    "POS":"S17",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":57,
+    "TIERS":7,
+    "PLAYER NAME":"Jonathan Greenard",
+    "TEAM":"MIN",
+    "POS":"DE9",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":58,
+    "TIERS":7,
+    "PLAYER NAME":"Devon Witherspoon",
+    "TEAM":"SEA",
+    "POS":"CB2",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":59,
+    "TIERS":7,
+    "PLAYER NAME":"Jared Verse",
+    "TEAM":"LAR",
+    "POS":"DE10",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":60,
+    "TIERS":7,
+    "PLAYER NAME":"Tyrel Dodson",
+    "TEAM":"MIA",
+    "POS":"LB31",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":61,
+    "TIERS":7,
+    "PLAYER NAME":"Demario Davis",
+    "TEAM":"NO",
+    "POS":"LB32",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":62,
+    "TIERS":7,
+    "PLAYER NAME":"Josh Hines-Allen",
+    "TEAM":"JAC",
+    "POS":"DE11",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":63,
+    "TIERS":7,
+    "PLAYER NAME":"Devin Lloyd",
+    "TEAM":"JAC",
+    "POS":"LB33",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":64,
+    "TIERS":7,
+    "PLAYER NAME":"Nick Cross",
+    "TEAM":"IND",
+    "POS":"S18",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":65,
+    "TIERS":7,
+    "PLAYER NAME":"Jordan Battle",
+    "TEAM":"CIN",
+    "POS":"S19",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":66,
+    "TIERS":7,
+    "PLAYER NAME":"Alex Highsmith",
+    "TEAM":"PIT",
+    "POS":"LB34",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":67,
+    "TIERS":7,
+    "PLAYER NAME":"Reed Blankenship",
+    "TEAM":"PHI",
+    "POS":"S20",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":68,
+    "TIERS":8,
+    "PLAYER NAME":"Cody Barton",
+    "TEAM":"TEN",
+    "POS":"LB35",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":69,
+    "TIERS":8,
+    "PLAYER NAME":"Andrew Van Ginkel",
+    "TEAM":"MIN",
+    "POS":"LB36",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":70,
+    "TIERS":8,
+    "PLAYER NAME":"Germaine Pratt",
+    "TEAM":"LV",
+    "POS":"LB37",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":71,
+    "TIERS":8,
+    "PLAYER NAME":"Minkah Fitzpatrick",
+    "TEAM":"MIA",
+    "POS":"S21",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":72,
+    "TIERS":8,
+    "PLAYER NAME":"Greg Rousseau",
+    "TEAM":"BUF",
+    "POS":"DE12",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":73,
+    "TIERS":8,
+    "PLAYER NAME":"DeForest Buckner",
+    "TEAM":"IND",
+    "POS":"DT1",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":74,
+    "TIERS":8,
+    "PLAYER NAME":"Cam Bynum",
+    "TEAM":"IND",
+    "POS":"S22",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":75,
+    "TIERS":8,
+    "PLAYER NAME":"Kenneth Murray Jr.",
+    "TEAM":"DAL",
+    "POS":"LB38",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":76,
+    "TIERS":8,
+    "PLAYER NAME":"Nik Bonitto",
+    "TEAM":"DEN",
+    "POS":"DE13",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":77,
+    "TIERS":8,
+    "PLAYER NAME":"Harold Landry III",
+    "TEAM":"NE",
+    "POS":"LB39",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":78,
+    "TIERS":8,
+    "PLAYER NAME":"Tremaine Edmunds",
+    "TEAM":"CHI",
+    "POS":"LB40",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":79,
+    "TIERS":8,
+    "PLAYER NAME":"Nate Landman",
+    "TEAM":"LAR",
+    "POS":"LB41",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":80,
+    "TIERS":8,
+    "PLAYER NAME":"Jalen Pitre",
+    "TEAM":"HOU",
+    "POS":"S23",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":81,
+    "TIERS":8,
+    "PLAYER NAME":"Travon Walker",
+    "TEAM":"JAC",
+    "POS":"DE14",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":82,
+    "TIERS":8,
+    "PLAYER NAME":"Jeffery Simmons",
+    "TEAM":"TEN",
+    "POS":"DT2",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":83,
+    "TIERS":8,
+    "PLAYER NAME":"Alex Anzalone",
+    "TEAM":"DET",
+    "POS":"LB42",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":84,
+    "TIERS":8,
+    "PLAYER NAME":"Jack Sanborn",
+    "TEAM":"DAL",
+    "POS":"LB43",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":85,
+    "TIERS":8,
+    "PLAYER NAME":"Jalen Thompson",
+    "TEAM":"ARI",
+    "POS":"S24",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":86,
+    "TIERS":8,
+    "PLAYER NAME":"Quentin Lake",
+    "TEAM":"LAR",
+    "POS":"S25",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":87,
+    "TIERS":8,
+    "PLAYER NAME":"Jaylon Carlies",
+    "TEAM":"IND",
+    "POS":"LB44",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":88,
+    "TIERS":9,
+    "PLAYER NAME":"Zach Allen",
+    "TEAM":"DEN",
+    "POS":"DE15",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":89,
+    "TIERS":9,
+    "PLAYER NAME":"Jordan Hicks",
+    "TEAM":"FA",
+    "POS":"LB45",
+    "BYE WEEK":"-",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":90,
+    "TIERS":9,
+    "PLAYER NAME":"Josh Sweat",
+    "TEAM":"ARI",
+    "POS":"DE16",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":91,
+    "TIERS":9,
+    "PLAYER NAME":"Christian Rozeboom",
+    "TEAM":"CAR",
+    "POS":"LB46",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":92,
+    "TIERS":9,
+    "PLAYER NAME":"E.J. Speed",
+    "TEAM":"HOU",
+    "POS":"LB47",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":93,
+    "TIERS":9,
+    "PLAYER NAME":"Dre Greenlaw",
+    "TEAM":"DEN",
+    "POS":"LB48",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":94,
+    "TIERS":9,
+    "PLAYER NAME":"Laiatu Latu",
+    "TEAM":"IND",
+    "POS":"DE17",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":95,
+    "TIERS":9,
+    "PLAYER NAME":"C.J. Gardner-Johnson",
+    "TEAM":"HOU",
+    "POS":"S26",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":96,
+    "TIERS":9,
+    "PLAYER NAME":"Tre'von Moehrig",
+    "TEAM":"CAR",
+    "POS":"S27",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":97,
+    "TIERS":9,
+    "PLAYER NAME":"Jeremiah Owusu-Koramoah",
+    "TEAM":"CLE",
+    "POS":"LB49",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":98,
+    "TIERS":9,
+    "PLAYER NAME":"Jevon Holland",
+    "TEAM":"NYG",
+    "POS":"S28",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":99,
+    "TIERS":9,
+    "PLAYER NAME":"C.J. Mosley",
+    "TEAM":"FA",
+    "POS":"LB50",
+    "BYE WEEK":"-",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":100,
+    "TIERS":9,
+    "PLAYER NAME":"Zach Sieler",
+    "TEAM":"MIA",
+    "POS":"DT3",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":101,
+    "TIERS":9,
+    "PLAYER NAME":"Talanoa Hufanga",
+    "TEAM":"DEN",
+    "POS":"S29",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":102,
+    "TIERS":9,
+    "PLAYER NAME":"Demetrius Knight Jr.",
+    "TEAM":"CIN",
+    "POS":"LB51",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":103,
+    "TIERS":9,
+    "PLAYER NAME":"Kerby Joseph",
+    "TEAM":"DET",
+    "POS":"S30",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":104,
+    "TIERS":9,
+    "PLAYER NAME":"Tyrice Knight",
+    "TEAM":"SEA",
+    "POS":"LB52",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":105,
+    "TIERS":9,
+    "PLAYER NAME":"Elandon Roberts",
+    "TEAM":"LV",
+    "POS":"LB53",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":106,
+    "TIERS":9,
+    "PLAYER NAME":"Mack Wilson Sr.",
+    "TEAM":"ARI",
+    "POS":"LB54",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":107,
+    "TIERS":9,
+    "PLAYER NAME":"Yaya Diaby",
+    "TEAM":"TB",
+    "POS":"DE18",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":108,
+    "TIERS":9,
+    "PLAYER NAME":"Jonathon Cooper",
+    "TEAM":"DEN",
+    "POS":"DE19",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":109,
+    "TIERS":9,
+    "PLAYER NAME":"Carl Granderson",
+    "TEAM":"NO",
+    "POS":"DE20",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":110,
+    "TIERS":10,
+    "PLAYER NAME":"Micah McFadden",
+    "TEAM":"NYG",
+    "POS":"LB55",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":111,
+    "TIERS":10,
+    "PLAYER NAME":"Jaden Hicks",
+    "TEAM":"KC",
+    "POS":"S31",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":112,
+    "TIERS":10,
+    "PLAYER NAME":"Khalil Mack",
+    "TEAM":"LAC",
+    "POS":"LB56",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":113,
+    "TIERS":10,
+    "PLAYER NAME":"Jihaad Campbell",
+    "TEAM":"PHI",
+    "POS":"LB57",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":114,
+    "TIERS":10,
+    "PLAYER NAME":"Josey Jewell",
+    "TEAM":"FA",
+    "POS":"LB58",
+    "BYE WEEK":"-",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":115,
+    "TIERS":10,
+    "PLAYER NAME":"Ivan Pace Jr.",
+    "TEAM":"MIN",
+    "POS":"LB59",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":116,
+    "TIERS":10,
+    "PLAYER NAME":"Tuli Tuipulotu",
+    "TEAM":"LAC",
+    "POS":"DE21",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":117,
+    "TIERS":10,
+    "PLAYER NAME":"Matt Milano",
+    "TEAM":"BUF",
+    "POS":"LB60",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":118,
+    "TIERS":10,
+    "PLAYER NAME":"Donovan Wilson",
+    "TEAM":"DAL",
+    "POS":"S32",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":119,
+    "TIERS":10,
+    "PLAYER NAME":"Kobie Turner",
+    "TEAM":"LAR",
+    "POS":"DT4",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":120,
+    "TIERS":10,
+    "PLAYER NAME":"Kenny Moore II",
+    "TEAM":"IND",
+    "POS":"CB3",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":121,
+    "TIERS":10,
+    "PLAYER NAME":"Payton Wilson",
+    "TEAM":"PIT",
+    "POS":"LB61",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":122,
+    "TIERS":10,
+    "PLAYER NAME":"Nolan Smith Jr.",
+    "TEAM":"PHI",
+    "POS":"DE22",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":123,
+    "TIERS":10,
+    "PLAYER NAME":"Harrison Smith",
+    "TEAM":"MIN",
+    "POS":"S33",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":124,
+    "TIERS":10,
+    "PLAYER NAME":"Will Harris",
+    "TEAM":"WAS",
+    "POS":"S34",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":125,
+    "TIERS":10,
+    "PLAYER NAME":"Dexter Lawrence II",
+    "TEAM":"NYG",
+    "POS":"DT5",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":126,
+    "TIERS":10,
+    "PLAYER NAME":"Kyler Gordon",
+    "TEAM":"CHI",
+    "POS":"CB4",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":127,
+    "TIERS":10,
+    "PLAYER NAME":"Trevin Wallace",
+    "TEAM":"CAR",
+    "POS":"LB62",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":128,
+    "TIERS":10,
+    "PLAYER NAME":"Kam Curl",
+    "TEAM":"LAR",
+    "POS":"S35",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":129,
+    "TIERS":10,
+    "PLAYER NAME":"Dee Winters",
+    "TEAM":"SF",
+    "POS":"LB63",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":130,
+    "TIERS":10,
+    "PLAYER NAME":"Paulson Adebo",
+    "TEAM":"NYG",
+    "POS":"CB5",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":131,
+    "TIERS":10,
+    "PLAYER NAME":"Byron Young",
+    "TEAM":"LAR",
+    "POS":"DE23",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":132,
+    "TIERS":10,
+    "PLAYER NAME":"Divine Deablo",
+    "TEAM":"ATL",
+    "POS":"LB64",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":133,
+    "TIERS":10,
+    "PLAYER NAME":"Quinnen Williams",
+    "TEAM":"NYJ",
+    "POS":"DT6",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":134,
+    "TIERS":10,
+    "PLAYER NAME":"Chris Jones",
+    "TEAM":"KC",
+    "POS":"DT7",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":135,
+    "TIERS":10,
+    "PLAYER NAME":"Abdul Carter",
+    "TEAM":"NYG",
+    "POS":"DT8",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":136,
+    "TIERS":10,
+    "PLAYER NAME":"Leonard Williams",
+    "TEAM":"SEA",
+    "POS":"DT9",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":137,
+    "TIERS":10,
+    "PLAYER NAME":"George Karlaftis III",
+    "TEAM":"KC",
+    "POS":"DE24",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":138,
+    "TIERS":11,
+    "PLAYER NAME":"Taron Johnson",
+    "TEAM":"BUF",
+    "POS":"CB6",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":139,
+    "TIERS":11,
+    "PLAYER NAME":"Cameron Heyward",
+    "TEAM":"PIT",
+    "POS":"DT10",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":140,
+    "TIERS":11,
+    "PLAYER NAME":"Alontae Taylor",
+    "TEAM":"NO",
+    "POS":"CB7",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":141,
+    "TIERS":11,
+    "PLAYER NAME":"Kyzir White",
+    "TEAM":"FA",
+    "POS":"LB65",
+    "BYE WEEK":"-",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":142,
+    "TIERS":11,
+    "PLAYER NAME":"Tykee Smith",
+    "TEAM":"TB",
+    "POS":"S36",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":143,
+    "TIERS":11,
+    "PLAYER NAME":"Jalen Carter",
+    "TEAM":"PHI",
+    "POS":"DT11",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":144,
+    "TIERS":11,
+    "PLAYER NAME":"Derrick Brown",
+    "TEAM":"CAR",
+    "POS":"DT12",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":145,
+    "TIERS":11,
+    "PLAYER NAME":"Nate Hobbs",
+    "TEAM":"GB",
+    "POS":"CB8",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":146,
+    "TIERS":11,
+    "PLAYER NAME":"Chop Robinson",
+    "TEAM":"MIA",
+    "POS":"DE25",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":147,
+    "TIERS":11,
+    "PLAYER NAME":"Ashtyn Davis",
+    "TEAM":"MIA",
+    "POS":"S37",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":148,
+    "TIERS":11,
+    "PLAYER NAME":"Mike Sainristil",
+    "TEAM":"WAS",
+    "POS":"CB9",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":149,
+    "TIERS":11,
+    "PLAYER NAME":"Cooper DeJean",
+    "TEAM":"PHI",
+    "POS":"CB10",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":150,
+    "TIERS":11,
+    "PLAYER NAME":"Henry To'oTo'o",
+    "TEAM":"HOU",
+    "POS":"LB66",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":151,
+    "TIERS":11,
+    "PLAYER NAME":"Christian Harris",
+    "TEAM":"HOU",
+    "POS":"LB67",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":152,
+    "TIERS":11,
+    "PLAYER NAME":"Jermaine Johnson II",
+    "TEAM":"NYJ",
+    "POS":"DE26",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":153,
+    "TIERS":11,
+    "PLAYER NAME":"Justin Reid",
+    "TEAM":"NO",
+    "POS":"S38",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":154,
+    "TIERS":11,
+    "PLAYER NAME":"Will McDonald IV",
+    "TEAM":"NYJ",
+    "POS":"DE27",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":155,
+    "TIERS":11,
+    "PLAYER NAME":"Malaki Starks",
+    "TEAM":"BAL",
+    "POS":"S39",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":156,
+    "TIERS":11,
+    "PLAYER NAME":"Julian Blackmon",
+    "TEAM":"NO",
+    "POS":"S40",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":157,
+    "TIERS":11,
+    "PLAYER NAME":"James Williams Sr.",
+    "TEAM":"TEN",
+    "POS":"S41",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":158,
+    "TIERS":11,
+    "PLAYER NAME":"Isaiah Pola-Mao",
+    "TEAM":"LV",
+    "POS":"S42",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":159,
+    "TIERS":11,
+    "PLAYER NAME":"Drue Tranquill",
+    "TEAM":"KC",
+    "POS":"LB68",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":160,
+    "TIERS":11,
+    "PLAYER NAME":"Jalon Walker",
+    "TEAM":"ATL",
+    "POS":"LB69",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":161,
+    "TIERS":11,
+    "PLAYER NAME":"Rayshawn Jenkins",
+    "TEAM":"CLE",
+    "POS":"S43",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":162,
+    "TIERS":11,
+    "PLAYER NAME":"Cole Bishop",
+    "TEAM":"BUF",
+    "POS":"S44",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":163,
+    "TIERS":11,
+    "PLAYER NAME":"Montez Sweat",
+    "TEAM":"CHI",
+    "POS":"DE28",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":164,
+    "TIERS":11,
+    "PLAYER NAME":"Rashan Gary",
+    "TEAM":"GB",
+    "POS":"LB70",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":165,
+    "TIERS":11,
+    "PLAYER NAME":"Byron Murphy Jr.",
+    "TEAM":"MIN",
+    "POS":"CB11",
+    "BYE WEEK":"6",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":166,
+    "TIERS":11,
+    "PLAYER NAME":"Christian Elliss",
+    "TEAM":"NE",
+    "POS":"DE29",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":167,
+    "TIERS":11,
+    "PLAYER NAME":"Kayvon Thibodeaux",
+    "TEAM":"NYG",
+    "POS":"DE30",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":168,
+    "TIERS":11,
+    "PLAYER NAME":"Quan Martin",
+    "TEAM":"WAS",
+    "POS":"S45",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":169,
+    "TIERS":12,
+    "PLAYER NAME":"Pete Werner",
+    "TEAM":"NO",
+    "POS":"LB71",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":170,
+    "TIERS":12,
+    "PLAYER NAME":"Omar Speights",
+    "TEAM":"LAR",
+    "POS":"LB72",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":171,
+    "TIERS":12,
+    "PLAYER NAME":"Bradley Chubb",
+    "TEAM":"MIA",
+    "POS":"LB73",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":172,
+    "TIERS":12,
+    "PLAYER NAME":"Akeem Davis-Gaither",
+    "TEAM":"ARI",
+    "POS":"LB74",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":173,
+    "TIERS":12,
+    "PLAYER NAME":"Nnamdi Madubuike",
+    "TEAM":"BAL",
+    "POS":"DT13",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":174,
+    "TIERS":12,
+    "PLAYER NAME":"Calijah Kancey",
+    "TEAM":"TB",
+    "POS":"DT14",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":175,
+    "TIERS":12,
+    "PLAYER NAME":"Amani Hooker",
+    "TEAM":"TEN",
+    "POS":"S46",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":176,
+    "TIERS":12,
+    "PLAYER NAME":"Riley Moss",
+    "TEAM":"DEN",
+    "POS":"CB12",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":177,
+    "TIERS":12,
+    "PLAYER NAME":"Troy Andersen",
+    "TEAM":"ATL",
+    "POS":"LB75",
+    "BYE WEEK":"5",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":178,
+    "TIERS":12,
+    "PLAYER NAME":"Odafe Oweh",
+    "TEAM":"BAL",
+    "POS":"DE31",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":179,
+    "TIERS":12,
+    "PLAYER NAME":"Jerome Baker",
+    "TEAM":"CLE",
+    "POS":"LB76",
+    "BYE WEEK":"9",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":180,
+    "TIERS":12,
+    "PLAYER NAME":"Kyle Van Noy",
+    "TEAM":"BAL",
+    "POS":"LB77",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":181,
+    "TIERS":12,
+    "PLAYER NAME":"Boye Mafe",
+    "TEAM":"SEA",
+    "POS":"DE32",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":182,
+    "TIERS":12,
+    "PLAYER NAME":"Trenton Simpson",
+    "TEAM":"BAL",
+    "POS":"LB78",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":183,
+    "TIERS":12,
+    "PLAYER NAME":"Nick Emmanwori",
+    "TEAM":"SEA",
+    "POS":"S47",
+    "BYE WEEK":"8",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":184,
+    "TIERS":12,
+    "PLAYER NAME":"Donovan Ezeiruaku",
+    "TEAM":"DAL",
+    "POS":"DT15",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":185,
+    "TIERS":13,
+    "PLAYER NAME":"Keion White",
+    "TEAM":"NE",
+    "POS":"DE33",
+    "BYE WEEK":"14",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":186,
+    "TIERS":13,
+    "PLAYER NAME":"Joey Bosa",
+    "TEAM":"BUF",
+    "POS":"DE34",
+    "BYE WEEK":"7",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":187,
+    "TIERS":13,
+    "PLAYER NAME":"Junior Colson",
+    "TEAM":"LAC",
+    "POS":"LB79",
+    "BYE WEEK":"12",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":188,
+    "TIERS":13,
+    "PLAYER NAME":"Xavier Woods",
+    "TEAM":"TEN",
+    "POS":"S48",
+    "BYE WEEK":"10",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  },
+  {
+    "RK":189,
+    "TIERS":13,
+    "PLAYER NAME":"Kwity Paye",
+    "TEAM":"IND",
+    "POS":"DE35",
+    "BYE WEEK":"11",
+    "SOS SEASON":"-",
+    "ECR VS. ADP":"-"
+  }
+]

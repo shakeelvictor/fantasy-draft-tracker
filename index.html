@@ -3128,7 +3128,14 @@
                             dataSource: `${playerRanking.source} + Real News`,
                             lastUpdated: new Date().toISOString(),
                             newsCount: latestNews.length,
-                            positionRank: `${player.position}${playerRanking.position}`
+                            positionRank: `${player.position}${playerRanking.position}`,
+                            // Add JSON-specific properties
+                            team: playerRanking.team || player.team,
+                            byeWeek: playerRanking.byeWeek,
+                            sosRating: playerRanking.sosRating,
+                            ecrVsAdp: playerRanking.ecrVsAdp,
+                            avgDiff: playerRanking.avgDiff,
+                            percentOver: playerRanking.percentOver
                         };
                         
                         setFantasyProData(finalData);
@@ -3334,68 +3341,238 @@
                 }
             };
 
-            // ACCURATE FANTASY FOOTBALL RANKINGS SYSTEM
+            // FANTASYPROS 2025 RANKINGS SYSTEM
             
-            // Get realistic player rankings based on 2025 consensus data
+            // Function to load JSON data and create rankings objects
+            const loadJSONRankings = async (jsonFile, isDefensive = false) => {
+                try {
+                    console.log('📄 Loading rankings from:', jsonFile);
+                    const response = await fetch(jsonFile);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to load ${jsonFile}: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    if (!Array.isArray(data)) {
+                        throw new Error('JSON data is not an array');
+                    }
+                    
+                    const rankings = {};
+                    
+                    data.forEach(player => {
+                        const playerName = player['PLAYER NAME'];
+                        if (!playerName) return;
+                        
+                        const key = playerName.toLowerCase();
+                        rankings[key] = {
+                            rank: parseInt(player.RK) || 0,
+                            tier: parseInt(player.TIERS) || 1,
+                            position: player.POS || '',
+                            team: player.TEAM || '',
+                            byeWeek: player['BYE WEEK'] || '-',
+                            sosRating: player['SOS SEASON'] || '-',
+                            ecrVsAdp: player['ECR VS. ADP'] || '-'
+                        };
+                        
+                        // Add offensive-specific fields if not defensive
+                        if (!isDefensive) {
+                            rankings[key].avgDiff = player['AVG. DIFF '] || '-';
+                            rankings[key].percentOver = player['% OVER '] || '-';
+                        }
+                    });
+                    
+                    return rankings;
+                } catch (error) {
+                    console.error('Error loading JSON rankings:', error);
+                    return {};
+                }
+            };
+            
+            
+            // Static fallback data - FantasyPros 2025 Offensive Player Rankings Data
+            const fantasyProsOffensiveRankingsStatic = {
+                "ja'marr chase": { rank: 1, tier: 1, position: "WR1", team: "CIN", byeWeek: "10", sosRating: "3 out of 5 stars", ecrVsAdp: "0", avgDiff: "+4.1", percentOver: "56% (9/16)" },
+                "bijan robinson": { rank: 2, tier: 1, position: "RB1", team: "ATL", byeWeek: "5", sosRating: "4 out of 5 stars", ecrVsAdp: "0", avgDiff: "+0.7", percentOver: "56% (9/16)" },
+                "jahmyr gibbs": { rank: 3, tier: 1, position: "RB2", team: "DET", byeWeek: "8", sosRating: "2 out of 5 stars", ecrVsAdp: "+1", avgDiff: "+2.9", percentOver: "68% (11/16)" },
+                "saquon barkley": { rank: 4, tier: 1, position: "RB3", team: "PHI", byeWeek: "9", sosRating: "3 out of 5 stars", ecrVsAdp: "-1", avgDiff: "+3.8", percentOver: "50% (8/16)" },
+                "ceedee lamb": { rank: 5, tier: 1, position: "WR2", team: "DAL", byeWeek: "10", sosRating: "2 out of 5 stars", ecrVsAdp: "+1", avgDiff: "-0.4", percentOver: "46% (7/15)" },
+                "justin jefferson": { rank: 6, tier: 1, position: "WR3", team: "MIN", byeWeek: "6", sosRating: "2 out of 5 stars", ecrVsAdp: "-1", avgDiff: "+0.7", percentOver: "50% (8/16)" },
+                "malik nabers": { rank: 7, tier: 2, position: "WR4", team: "NYG", byeWeek: "14", sosRating: "2 out of 5 stars", ecrVsAdp: "+4", avgDiff: "+1.8", percentOver: "42% (6/14)" },
+                "nico collins": { rank: 8, tier: 2, position: "WR5", team: "HOU", byeWeek: "6", sosRating: "4 out of 5 stars", ecrVsAdp: "+4", avgDiff: "+0.9", percentOver: "63% (7/11)" },
+                "amon-ra st. brown": { rank: 9, tier: 2, position: "WR6", team: "DET", byeWeek: "8", sosRating: "3 out of 5 stars", ecrVsAdp: "0", avgDiff: "+1.0", percentOver: "62% (10/16)" },
+                "christian mccaffrey": { rank: 10, tier: 2, position: "RB4", team: "SF", byeWeek: "14", sosRating: "3 out of 5 stars", ecrVsAdp: "-3", avgDiff: "-8.2", percentOver: "0% (0/4)" },
+                "puka nacua": { rank: 11, tier: 2, position: "WR7", team: "LAR", byeWeek: "8", sosRating: "3 out of 5 stars", ecrVsAdp: "+2", avgDiff: "+1.4", percentOver: "54% (6/11)" },
+                "derrick henry": { rank: 12, tier: 2, position: "RB5", team: "BAL", byeWeek: "7", sosRating: "4 out of 5 stars", ecrVsAdp: "-4", avgDiff: "+2.8", percentOver: "56% (9/16)" },
+                "brian thomas jr.": { rank: 13, tier: 2, position: "WR8", team: "JAC", byeWeek: "8", sosRating: "4 out of 5 stars", ecrVsAdp: "+2", avgDiff: "+3.7", percentOver: "75% (12/16)" },
+                "ashton jeanty": { rank: 14, tier: 2, position: "RB6", team: "LV", byeWeek: "8", sosRating: "2 out of 5 stars", ecrVsAdp: "-4", avgDiff: "-", percentOver: "-" },
+                "de'von achane": { rank: 15, tier: 2, position: "RB7", team: "MIA", byeWeek: "12", sosRating: "4 out of 5 stars", ecrVsAdp: "-1", avgDiff: "-0.2", percentOver: "50% (8/16)" },
+                "drake london": { rank: 16, tier: 2, position: "WR9", team: "ATL", byeWeek: "5", sosRating: "3 out of 5 stars", ecrVsAdp: "+1", avgDiff: "-0.3", percentOver: "56% (9/16)" },
+                "a.j. brown": { rank: 17, tier: 3, position: "WR10", team: "PHI", byeWeek: "9", sosRating: "3 out of 5 stars", ecrVsAdp: "+5", avgDiff: "+0.8", percentOver: "53% (7/13)" },
+                "brock bowers": { rank: 18, tier: 3, position: "TE1", team: "LV", byeWeek: "8", sosRating: "2 out of 5 stars", ecrVsAdp: "+2", avgDiff: "+1.4", percentOver: "56% (9/16)" },
+                "jonathan taylor": { rank: 19, tier: 3, position: "RB8", team: "IND", byeWeek: "11", sosRating: "2 out of 5 stars", ecrVsAdp: "-1", avgDiff: "+1.3", percentOver: "46% (6/13)" },
+                "josh jacobs": { rank: 20, tier: 3, position: "RB9", team: "GB", byeWeek: "5", sosRating: "4 out of 5 stars", ecrVsAdp: "-4", avgDiff: "+1.9", percentOver: "50% (8/16)" },
+                "bucky irving": { rank: 21, tier: 3, position: "RB10", team: "TB", byeWeek: "9", sosRating: "3 out of 5 stars", ecrVsAdp: "-2", avgDiff: "+2.8", percentOver: "75% (12/16)" },
+                "chase brown": { rank: 22, tier: 3, position: "RB11", team: "CIN", byeWeek: "10", sosRating: "4 out of 5 stars", ecrVsAdp: "+2", avgDiff: "+2.3", percentOver: "62% (10/16)" },
+                "trey mcbride": { rank: 23, tier: 3, position: "TE2", team: "ARI", byeWeek: "8", sosRating: "5 out of 5 stars", ecrVsAdp: "+4", avgDiff: "+1.3", percentOver: "53% (8/15)" },
+                "ladd mcconkey": { rank: 24, tier: 3, position: "WR11", team: "LAC", byeWeek: "12", sosRating: "3 out of 5 stars", ecrVsAdp: "+2", avgDiff: "+2.0", percentOver: "53% (8/15)" },
+                "kyren williams": { rank: 25, tier: 3, position: "RB12", team: "LAR", byeWeek: "8", sosRating: "3 out of 5 stars", ecrVsAdp: "0", avgDiff: "-0.1", percentOver: "43% (7/16)" },
+                "josh allen": { rank: 26, tier: 3, position: "QB1", team: "BUF", byeWeek: "7", sosRating: "4 out of 5 stars", ecrVsAdp: "-3", avgDiff: "+2.0", percentOver: "56% (9/16)" },
+                "lamar jackson": { rank: 27, tier: 3, position: "QB2", team: "BAL", byeWeek: "7", sosRating: "3 out of 5 stars", ecrVsAdp: "-6", avgDiff: "+3.6", percentOver: "75% (12/16)" },
+                "jaxon smith-njigba": { rank: 28, tier: 4, position: "WR12", team: "SEA", byeWeek: "8", sosRating: "3 out of 5 stars", ecrVsAdp: "+4", avgDiff: "+1.6", percentOver: "50% (8/16)" },
+                "tee higgins": { rank: 29, tier: 4, position: "WR13", team: "CIN", byeWeek: "10", sosRating: "3 out of 5 stars", ecrVsAdp: "+2", avgDiff: "+4.0", percentOver: "63% (7/11)" },
+                "george kittle": { rank: 30, tier: 4, position: "TE3", team: "SF", byeWeek: "14", sosRating: "3 out of 5 stars", ecrVsAdp: "+6", avgDiff: "+2.9", percentOver: "78% (11/14)" },
+                "tyreek hill": { rank: 31, tier: 4, position: "WR14", team: "MIA", byeWeek: "12", sosRating: "3 out of 5 stars", ecrVsAdp: "-3", avgDiff: "-2.1", percentOver: "31% (5/16)" },
+                "garrett wilson": { rank: 32, tier: 4, position: "WR15", team: "NYJ", byeWeek: "9", sosRating: "4 out of 5 stars", ecrVsAdp: "+5", avgDiff: "+0.1", percentOver: "43% (7/16)" },
+                "jayden daniels": { rank: 33, tier: 4, position: "QB3", team: "WAS", byeWeek: "12", sosRating: "2 out of 5 stars", ecrVsAdp: "-4", avgDiff: "+2.0", percentOver: "56% (9/16)" },
+                "mike evans": { rank: 34, tier: 4, position: "WR16", team: "TB", byeWeek: "9", sosRating: "3 out of 5 stars", ecrVsAdp: "+7", avgDiff: "+1.5", percentOver: "46% (6/13)" },
+                "james cook": { rank: 35, tier: 4, position: "RB13", team: "BUF", byeWeek: "7", sosRating: "4 out of 5 stars", ecrVsAdp: "-5", avgDiff: "+2.1", percentOver: "60% (9/15)" },
+                "davante adams": { rank: 36, tier: 4, position: "WR17", team: "LAR", byeWeek: "8", sosRating: "3 out of 5 stars", ecrVsAdp: "+7", avgDiff: "+1.3", percentOver: "46% (6/13)" },
+                "jalen hurts": { rank: 37, tier: 4, position: "QB4", team: "PHI", byeWeek: "9", sosRating: "3 out of 5 stars", ecrVsAdp: "-2", avgDiff: "0.0", percentOver: "53% (8/15)" },
+                "kenneth walker iii": { rank: 38, tier: 4, position: "RB14", team: "SEA", byeWeek: "8", sosRating: "3 out of 5 stars", ecrVsAdp: "+4", avgDiff: "+0.2", percentOver: "36% (4/11)" },
+                "omarion hampton": { rank: 39, tier: 4, position: "RB15", team: "LAC", byeWeek: "12", sosRating: "2 out of 5 stars", ecrVsAdp: "-5", avgDiff: "-", percentOver: "-" },
+                "marvin harrison jr.": { rank: 40, tier: 4, position: "WR18", team: "ARI", byeWeek: "8", sosRating: "4 out of 5 stars", ecrVsAdp: "-1", avgDiff: "-1.6", percentOver: "37% (6/16)" },
+                "breece hall": { rank: 41, tier: 4, position: "RB16", team: "NYJ", byeWeek: "9", sosRating: "5 out of 5 stars", ecrVsAdp: "-8", avgDiff: "-2.6", percentOver: "26% (4/15)" },
+                "terry mclaurin": { rank: 42, tier: 4, position: "WR19", team: "WAS", byeWeek: "12", sosRating: "3 out of 5 stars", ecrVsAdp: "+3", avgDiff: "+1.8", percentOver: "75% (12/16)" },
+                "alvin kamara": { rank: 43, tier: 4, position: "RB17", team: "NO", byeWeek: "11", sosRating: "4 out of 5 stars", ecrVsAdp: "-3", avgDiff: "-0.1", percentOver: "35% (5/14)" },
+                "dj moore": { rank: 44, tier: 4, position: "WR20", team: "CHI", byeWeek: "5", sosRating: "2 out of 5 stars", ecrVsAdp: "+4", avgDiff: "-0.2", percentOver: "31% (5/16)" },
+                "joe burrow": { rank: 45, tier: 5, position: "QB5", team: "CIN", byeWeek: "10", sosRating: "2 out of 5 stars", ecrVsAdp: "-7", avgDiff: "+3.9", percentOver: "68% (11/16)" },
+                "dk metcalf": { rank: 46, tier: 5, position: "WR21", team: "PIT", byeWeek: "5", sosRating: "4 out of 5 stars", ecrVsAdp: "+1", avgDiff: "-1.7", percentOver: "28% (4/14)" },
+                "chuba hubbard": { rank: 47, tier: 5, position: "RB18", team: "CAR", byeWeek: "14", sosRating: "3 out of 5 stars", ecrVsAdp: "-3", avgDiff: "+2.1", percentOver: "53% (8/15)" },
+                "courtland sutton": { rank: 48, tier: 5, position: "WR22", team: "DEN", byeWeek: "12", sosRating: "3 out of 5 stars", ecrVsAdp: "+1", avgDiff: "+1.1", percentOver: "62% (10/16)" },
+                "james conner": { rank: 49, tier: 5, position: "RB19", team: "ARI", byeWeek: "8", sosRating: "3 out of 5 stars", ecrVsAdp: "-3", avgDiff: "+0.4", percentOver: "62% (10/16)" },
+                "treveyon henderson": { rank: 50, tier: 5, position: "RB20", team: "NE", byeWeek: "14", sosRating: "4 out of 5 stars", ecrVsAdp: "+5", avgDiff: "-", percentOver: "-" },
+                "travis kelce": { rank: 77, tier: 6, position: "TE6", team: "KC", byeWeek: "10", sosRating: "3 out of 5 stars", ecrVsAdp: "-15", avgDiff: "-1.9", percentOver: "37% (6/16)" },
+                "mark andrews": { rank: 78, tier: 6, position: "TE7", team: "BAL", byeWeek: "7", sosRating: "3 out of 5 stars", ecrVsAdp: "-3", avgDiff: "+1.8", percentOver: "62% (10/16)" }
+            };
+            
+            // Static fallback data - FantasyPros 2025 Defensive Player Rankings Data
+            const fantasyProsDefensiveRankingsStatic = {
+                "zaire franklin": { rank: 1, tier: 1, position: "LB1", team: "IND", byeWeek: "11", sosRating: "-", ecrVsAdp: "-" },
+                "roquan smith": { rank: 2, tier: 1, position: "LB2", team: "BAL", byeWeek: "7", sosRating: "-", ecrVsAdp: "-" },
+                "zack baun": { rank: 3, tier: 2, position: "LB3", team: "PHI", byeWeek: "9", sosRating: "-", ecrVsAdp: "-" },
+                "fred warner": { rank: 4, tier: 2, position: "LB4", team: "SF", byeWeek: "14", sosRating: "-", ecrVsAdp: "-" },
+                "myles garrett": { rank: 5, tier: 2, position: "DE1", team: "CLE", byeWeek: "9", sosRating: "-", ecrVsAdp: "-" },
+                "maxx crosby": { rank: 6, tier: 2, position: "DE2", team: "LV", byeWeek: "8", sosRating: "-", ecrVsAdp: "-" },
+                "t.j. edwards": { rank: 7, tier: 2, position: "LB5", team: "CHI", byeWeek: "5", sosRating: "-", ecrVsAdp: "-" },
+                "aidan hutchinson": { rank: 8, tier: 2, position: "DE3", team: "DET", byeWeek: "8", sosRating: "-", ecrVsAdp: "-" },
+                "foyesade oluokun": { rank: 9, tier: 2, position: "LB6", team: "JAC", byeWeek: "8", sosRating: "-", ecrVsAdp: "-" },
+                "ernest jones iv": { rank: 10, tier: 3, position: "LB7", team: "SEA", byeWeek: "8", sosRating: "-", ecrVsAdp: "-" },
+                "jamien sherwood": { rank: 11, tier: 3, position: "LB8", team: "NYJ", byeWeek: "9", sosRating: "-", ecrVsAdp: "-" },
+                "terrel bernard": { rank: 12, tier: 3, position: "LB9", team: "BUF", byeWeek: "7", sosRating: "-", ecrVsAdp: "-" },
+                "nick bosa": { rank: 13, tier: 3, position: "DE4", team: "SF", byeWeek: "14", sosRating: "-", ecrVsAdp: "-" },
+                "brian branch": { rank: 14, tier: 3, position: "S1", team: "DET", byeWeek: "8", sosRating: "-", ecrVsAdp: "-" },
+                "kyle hamilton": { rank: 15, tier: 3, position: "S2", team: "BAL", byeWeek: "7", sosRating: "-", ecrVsAdp: "-" },
+                "alex singleton": { rank: 16, tier: 3, position: "LB10", team: "DEN", byeWeek: "12", sosRating: "-", ecrVsAdp: "-" },
+                "t.j. watt": { rank: 17, tier: 3, position: "LB11", team: "PIT", byeWeek: "5", sosRating: "-", ecrVsAdp: "-" },
+                "budda baker": { rank: 18, tier: 4, position: "S3", team: "ARI", byeWeek: "8", sosRating: "-", ecrVsAdp: "-" },
+                "robert spillane": { rank: 19, tier: 4, position: "LB12", team: "NE", byeWeek: "14", sosRating: "-", ecrVsAdp: "-" },
+                "logan wilson": { rank: 20, tier: 4, position: "LB13", team: "CIN", byeWeek: "10", sosRating: "-", ecrVsAdp: "-" },
+                "blake cashman": { rank: 21, tier: 4, position: "LB14", team: "MIN", byeWeek: "6", sosRating: "-", ecrVsAdp: "-" },
+                "derwin james jr.": { rank: 22, tier: 4, position: "S4", team: "LAC", byeWeek: "12", sosRating: "-", ecrVsAdp: "-" },
+                "bobby wagner": { rank: 23, tier: 4, position: "LB15", team: "WAS", byeWeek: "12", sosRating: "-", ecrVsAdp: "-" },
+                "micah parsons": { rank: 24, tier: 4, position: "LB16", team: "DAL", byeWeek: "10", sosRating: "-", ecrVsAdp: "-" },
+                "jordyn brooks": { rank: 25, tier: 4, position: "LB17", team: "MIA", byeWeek: "12", sosRating: "-", ecrVsAdp: "-" },
+                "travis hunter": { rank: 41, tier: 6, position: "CB1", team: "JAC", byeWeek: "8", sosRating: "4 out of 5 stars", ecrVsAdp: "-" }
+            };
+            
+            // Initialize dynamic rankings objects that will be populated from JSON files
+            let fantasyProsOffensiveRankings = fantasyProsOffensiveRankingsStatic;
+            let fantasyProsDefensiveRankings = fantasyProsDefensiveRankingsStatic;
+            
+            // Load JSON data and update rankings on page initialization
+            const initializeRankingsFromJSON = async () => {
+                try {
+                    console.log('🔄 Attempting to load JSON ranking data...');
+                    
+                    // Load offensive and defensive rankings from JSON files
+                    const [offensiveRankings, defensiveRankings] = await Promise.all([
+                        loadJSONRankings('./FantasyPros_2025_Draft_ALL_Rankings.json', false),
+                        loadJSONRankings('./FantasyPros_2025_IDP.json', true)
+                    ]);
+                    
+                    // Update global rankings objects
+                    fantasyProsOffensiveRankings = offensiveRankings;
+                    fantasyProsDefensiveRankings = defensiveRankings;
+                    
+                    console.log('✅ Successfully loaded rankings from JSON files');
+                    console.log('Loaded ' + Object.keys(fantasyProsOffensiveRankings).length + ' offensive players');
+                    console.log('Loaded ' + Object.keys(fantasyProsDefensiveRankings).length + ' defensive players');
+                    
+                    // Display sample data
+                    const offensiveKeys = Object.keys(fantasyProsOffensiveRankings);
+                    const defensiveKeys = Object.keys(fantasyProsDefensiveRankings);
+                    
+                    if (offensiveKeys.length > 0) {
+                        console.log('📊 Sample offensive player:', offensiveKeys[0], fantasyProsOffensiveRankings[offensiveKeys[0]]);
+                    }
+                    if (defensiveKeys.length > 0) {
+                        console.log('🛡️ Sample defensive player:', defensiveKeys[0], fantasyProsDefensiveRankings[defensiveKeys[0]]);
+                    }
+                    
+                } catch (error) {
+                    console.log('⚠️ Failed to load JSON data, using static fallback:', error.message);
+                    // Keep using static data as fallback
+                    fantasyProsOffensiveRankings = fantasyProsOffensiveRankingsStatic;
+                    fantasyProsDefensiveRankings = fantasyProsDefensiveRankingsStatic;
+                }
+            };
+            
+            // Initialize rankings when the script loads
+            initializeRankingsFromJSON();
+            
+            // Get realistic player rankings based on FantasyPros 2025 data
             const getAccuratePlayerRankings = (player) => {
                 const playerName = `${player.first_name} ${player.last_name}`;
-                const position = player.position;
-                const team = player.team || 'FA';
-                
-                // Realistic 2025 fantasy football rankings based on consensus
-                const playerRankings = {
-                    // TOP QBs
-                    'josh allen': { overall: 3, position: 1, tier: 1, adp: 2.8 },
-                    'lamar jackson': { overall: 7, position: 2, tier: 1, adp: 6.4 },
-                    'anthony richardson': { overall: 12, position: 3, tier: 1, adp: 11.2 },
-                    'jayden daniels': { overall: 15, position: 4, tier: 1, adp: 14.8 },
-                    'jalen hurts': { overall: 18, position: 5, tier: 2, adp: 17.5 },
-                    'joe burrow': { overall: 25, position: 6, tier: 2, adp: 24.1 },
-                    'cj stroud': { overall: 28, position: 7, tier: 2, adp: 27.3 },
-                    'dak prescott': { overall: 35, position: 8, tier: 2, adp: 34.7 },
-                    
-                    // TOP RBs 
-                    'bijan robinson': { overall: 2, position: 1, tier: 1, adp: 1.8 },
-                    'saquon barkley': { overall: 4, position: 2, tier: 1, adp: 3.9 },
-                    'breece hall': { overall: 5, position: 3, tier: 1, adp: 4.8 },
-                    'jonathan taylor': { overall: 8, position: 4, tier: 1, adp: 7.8 },
-                    'derrick henry': { overall: 10, position: 5, tier: 1, adp: 9.5 },
-                    'jahmyr gibbs': { overall: 11, position: 6, tier: 1, adp: 10.7 },
-                    'alvin kamara': { overall: 16, position: 7, tier: 2, adp: 15.4 },
-                    
-                    // TOP WRs
-                    "ja'marr chase": { overall: 1, position: 1, tier: 1, adp: 1.2 },
-                    'justin jefferson': { overall: 6, position: 2, tier: 1, adp: 5.8 },
-                    'tyreek hill': { overall: 9, position: 3, tier: 1, adp: 8.9 },
-                    'amon-ra st brown': { overall: 13, position: 4, tier: 1, adp: 12.6 },
-                    'ceedee lamb': { overall: 14, position: 5, tier: 1, adp: 13.4 },
-                    'stefon diggs': { overall: 19, position: 6, tier: 2, adp: 18.7 },
-                    'mike evans': { overall: 21, position: 7, tier: 2, adp: 20.5 },
-                    'davante adams': { overall: 23, position: 8, tier: 2, adp: 22.8 },
-                    
-                    // TOP TEs
-                    'travis kelce': { overall: 17, position: 1, tier: 1, adp: 16.8 },
-                    'mark andrews': { overall: 29, position: 2, tier: 2, adp: 28.4 },
-                    'george kittle': { overall: 33, position: 3, tier: 2, adp: 32.7 },
-                    'tj hockenson': { overall: 41, position: 4, tier: 2, adp: 40.3 }
-                };
-                
-                // Look up player in rankings
                 const key = playerName.toLowerCase();
-                const ranking = playerRankings[key];
                 
-                if (ranking) {
+                // Check offensive rankings first
+                if (fantasyProsOffensiveRankings[key]) {
+                    const data = fantasyProsOffensiveRankings[key];
                     return {
-                        overall: ranking.overall,
-                        position: ranking.position, 
-                        tier: ranking.tier,
-                        adp: ranking.adp,
-                        source: '2025 Consensus Rankings'
+                        overall: data.rank,
+                        position: extractPositionRank(data.position),
+                        tier: data.tier,
+                        adp: calculateADPFromRank(data.rank, data.ecrVsAdp),
+                        byeWeek: data.byeWeek,
+                        sosRating: data.sosRating,
+                        ecrVsAdp: data.ecrVsAdp,
+                        avgDiff: data.avgDiff,
+                        percentOver: data.percentOver,
+                        source: 'FantasyPros 2025 Rankings'
+                    };
+                }
+                
+                // Check defensive rankings
+                if (fantasyProsDefensiveRankings[key]) {
+                    const data = fantasyProsDefensiveRankings[key];
+                    return {
+                        overall: data.rank,
+                        position: extractPositionRank(data.position),
+                        tier: data.tier,
+                        adp: calculateADPFromRank(data.rank, data.ecrVsAdp),
+                        team: data.team,
+                        byeWeek: data.byeWeek,
+                        sosRating: data.sosRating,
+                        ecrVsAdp: data.ecrVsAdp,
+                        source: 'FantasyPros 2025 IDP Rankings'
                     };
                 }
                 
                 // Fallback to position-based estimates for unlisted players
                 return generatePositionBasedRanking(player);
+            };
+            
+            // Extract position rank from position string (e.g., "WR1" -> 1)
+            const extractPositionRank = (positionString) => {
+                const match = positionString.match(/\d+/);
+                return match ? parseInt(match[0]) : 1;
+            };
+            
+            // Calculate realistic ADP from rank and ECR vs ADP differential
+            const calculateADPFromRank = (rank, ecrVsAdp) => {
+                const adpDiff = parseFloat(ecrVsAdp) || 0;
+                return Math.max(1, rank - adpDiff);
             };
             
             // Generate realistic position-based rankings for unlisted players
@@ -3968,6 +4145,40 @@
                                             <div className="text-xs text-slate-400">Proj. Pts</div>
                                         </div>
                                     </div>
+
+                                    {/* Additional JSON-specific metrics */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                        <div className="glass p-3 rounded-lg text-center">
+                                            <div className="text-lg font-bold text-cyan-400">{fantasyProData.team || 'N/A'}</div>
+                                            <div className="text-xs text-slate-400">Team</div>
+                                        </div>
+                                        <div className="glass p-3 rounded-lg text-center">
+                                            <div className="text-lg font-bold text-orange-400">{fantasyProData.byeWeek || 'N/A'}</div>
+                                            <div className="text-xs text-slate-400">Bye Week</div>
+                                        </div>
+                                        <div className="glass p-3 rounded-lg text-center">
+                                            <div className="text-lg font-bold text-red-400">{fantasyProData.sosRating || 'N/A'}</div>
+                                            <div className="text-xs text-slate-400">SOS Rating</div>
+                                        </div>
+                                        <div className="glass p-3 rounded-lg text-center">
+                                            <div className="text-lg font-bold text-pink-400">{fantasyProData.ecrVsAdp || 'N/A'}</div>
+                                            <div className="text-xs text-slate-400">ECR vs ADP</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Offensive-specific metrics */}
+                                    {fantasyProData.avgDiff && (
+                                        <div className="grid grid-cols-2 gap-4 mt-4">
+                                            <div className="glass p-3 rounded-lg text-center">
+                                                <div className="text-lg font-bold text-emerald-400">{fantasyProData.avgDiff}</div>
+                                                <div className="text-xs text-slate-400">Avg. Difference</div>
+                                            </div>
+                                            <div className="glass p-3 rounded-lg text-center">
+                                                <div className="text-lg font-bold text-lime-400">{fantasyProData.percentOver || 'N/A'}</div>
+                                                <div className="text-xs text-slate-400">% Over Projection</div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Latest News */}
                                     {fantasyProData.expertNotes && fantasyProData.expertNotes.length > 0 && (
