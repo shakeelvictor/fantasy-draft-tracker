@@ -3274,6 +3274,9 @@
             const [error, setError] = useState(null);
             const [closing, setClosing] = useState(false);
 
+            // Simple cache for player data to speed up repeated views
+            const playerDataCache = React.useRef(new Map());
+
             const {
                 makePick,
                 currentPick,
@@ -3296,101 +3299,107 @@
                 const fetchFantasyProData = async () => {
                     if (!player) return;
 
+                    const playerId = player.player_id;
+                    const playerName = `${player.first_name} ${player.last_name}`;
+
+                    // Check cache first for instant loading
+                    if (playerDataCache.current.has(playerId)) {
+                        const cachedData = playerDataCache.current.get(playerId);
+                        setFantasyProData(cachedData);
+                        setLoading(false);
+                        console.log(`⚡ Loaded cached data for ${playerName}`);
+                        return;
+                    }
+
                     setLoading(true);
                     setError(null);
 
                     try {
-                        const playerName = `${player.first_name} ${player.last_name}`;
-                        console.log('Fetching real expert analysis for:', playerName);
+                        console.log('Loading player data for:', playerName);
 
-                        let expertData = null;
-                        let dataSource = 'Unknown';
-
-                        // Fetch latest news first
-                        const latestNews = await fetchPlayerNews(player);
-                        console.log(`📰 Found ${latestNews.length} news items for ${playerName}`);
-
-                        // Get accurate player rankings based on 2025 consensus data
+                        // Get accurate player rankings based on 2025 consensus data (fast, local)
                         const playerRanking = getAccuratePlayerRankings(player);
 
-                        // Try multiple real data sources in order of preference
-                        const dataSources = [
-                            () => fetchSleeperData(player),
-                            () => fetchFantasyNerdsData(player),
-                            () => fetchTheScoreData(player),
-                            () => fetchTheSportsDBData(player)
-                        ];
+                        // Show local data immediately with intelligent fallback
+                        const expertData = generateIntelligentFallback(player);
 
-                        for (const fetchFunction of dataSources) {
-                            try {
-                                const result = await fetchFunction();
-                                if (result && result.expertNotes && result.expertNotes.length > 0) {
-                                    expertData = result;
-                                    dataSource = result.source || 'API';
-                                    console.log(`✅ Got real data from: ${dataSource}`);
-                                    break;
-                                }
-                            } catch (apiError) {
-                                console.log(`❌ Failed to fetch from source:`, apiError.message);
-                                continue;
-                            }
-                        }
+                        // Use placeholder news initially
+                        const initialNews = generatePlayerContext(player);
+                        console.log(`📊 Loaded local data for ${playerName}`);
 
-                        // If no real data found, use intelligent fallback
-                        if (!expertData) {
-                            console.log('📝 Using intelligent fallback - no real API data available');
-                            expertData = generateIntelligentFallback(player);
-                            dataSource = 'Fallback Analysis';
-                        }
-
-                        // Helper function to get round from ADP
-                        const getADPRound = (adp) => {
-                            // Ensure adp is a number and handle invalid values
-                            const numericADP = parseFloat(adp);
-                            if (isNaN(numericADP) || numericADP <= 0) {
-                                return 'N/A';
-                            }
-
-                            const round = Math.ceil(numericADP / 12); // 12-team league assumption
-                            const pick = ((numericADP - 1) % 12) + 1;
-                            return `${round}.${pick.toString().padStart(2, '0')} (${numericADP.toFixed(1)})`;
-                        };
-
-                        // Merge news and ranking data
-                        const finalData = {
+                        // Set initial data immediately (fast display)
+                        const initialData = {
                             ...expertData,
                             ranking: `#${playerRanking.overall}`,
                             tier: `Tier ${playerRanking.tier} (${player.position})`,
                             adp: getADPRound(playerRanking.adp),
-                            expertNotes: latestNews,
-                            dataSource: `${playerRanking.source} + Real News`,
+                            expertNotes: initialNews,
+                            dataSource: `${playerRanking.source}`,
                             lastUpdated: new Date().toISOString(),
-                            newsCount: latestNews.length,
+                            newsCount: initialNews.length,
                             positionRank: `${player.position}${playerRanking.position}`,
-                            // Add JSON-specific properties
+                            weeklyProjection: playerRanking.weeklyProjection,
+                            strengthOfSchedule: playerRanking.strengthOfSchedule,
                             team: playerRanking.team || player.team,
                             byeWeek: playerRanking.byeWeek,
                             sosRating: playerRanking.sosRating,
                             ecrVsAdp: playerRanking.ecrVsAdp,
                             avgDiff: playerRanking.avgDiff,
-                            percentOver: playerRanking.percentOver
+                            percentOver: playerRanking.percentOver,
+                            loading: false
                         };
 
-                        setFantasyProData(finalData);
+                        // Cache the data for future use
+                        playerDataCache.current.set(playerId, initialData);
 
-                    } catch (err) {
-                        console.error('Error generating FantasyPros data:', err);
-                        setError('Unable to load player analysis');
-                        setFantasyProData({
-                            ranking: 'N/A',
-                            expertNotes: ['Player analysis temporarily unavailable'],
-                            tier: 'N/A',
-                            adp: 'N/A',
-                            projections: null
-                        });
-                    } finally {
+                        setFantasyProData(initialData);
+                        setLoading(false);
+
+                        // Load external data in background (optional enhancement)
+                        loadExternalDataInBackground(player, playerRanking, initialData);
+
+                    } catch (error) {
+                        console.error('Error loading player data:', error);
+                        setError('Failed to load player data');
                         setLoading(false);
                     }
+                };
+
+                // Background function to enhance data with external sources
+                const loadExternalDataInBackground = async (player, playerRanking, baseData) => {
+                    try {
+                        const playerName = `${player.first_name} ${player.last_name}`;
+                        
+                        // Fetch latest news in background (slow)
+                        const latestNews = await fetchPlayerNews(player);
+                        
+                        if (latestNews.length > 0) {
+                            const enhancedData = {
+                                ...baseData,
+                                expertNotes: latestNews,
+                                dataSource: `${playerRanking.source} + Live News`,
+                                newsCount: latestNews.length,
+                                lastUpdated: new Date().toISOString()
+                            };
+                            setFantasyProData(enhancedData);
+                            console.log(`📰 Updated with ${latestNews.length} live news items for ${playerName}`);
+                        }
+                    } catch (error) {
+                        console.log('Background news fetch failed, keeping local data:', error.message);
+                    }
+                };
+
+                // Helper function to get round from ADP
+                const getADPRound = (adp) => {
+                    // Ensure adp is a number and handle invalid values
+                    const numericADP = parseFloat(adp);
+                    if (isNaN(numericADP) || numericADP <= 0) {
+                        return 'N/A';
+                    }
+
+                    const round = Math.ceil(numericADP / 12); // 12-team league assumption
+                    const pick = ((numericADP - 1) % 12) + 1;
+                    return `${round}.${pick.toString().padStart(2, '0')} (${numericADP.toFixed(1)})`;
                 };
 
                 fetchFantasyProData();
@@ -5846,104 +5855,6 @@
             );
         };
 
-        // View-Only Mobile Menu Component
-        const ViewOnlyMobileMenu = () => {
-            const [showSettings, setShowSettings] = useState(false);
-            const [showArchives, setShowArchives] = useState(false);
-            const [showMobileMenu, setShowMobileMenu] = useState(false);
-            const isMobile = useIsMobile();
-
-            // Mobile menu component for view-only mode
-            const ViewOnlyMenu = ({ onClose, onSettingsClick, onArchivesClick }) => {
-                const [closing, setClosing] = useState(false);
-
-                const handleClose = () => {
-                    setClosing(true);
-                    setTimeout(onClose, 300);
-                };
-
-                const handleAction = (action) => {
-                    handleClose();
-                    setTimeout(action, 350);
-                };
-
-                return (
-                    <div className={`mobile-menu ${closing ? 'closing' : ''}`}>
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-white">Menu</h2>
-                            <button
-                                onClick={handleClose}
-                                className="text-slate-400 hover:text-white"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            <button
-                                onClick={() => handleAction(onSettingsClick)}
-                                className="w-full p-4 bg-slate-800 hover:bg-slate-700 rounded-lg text-left transition-colors"
-                            >
-                                <div className="flex items-center space-x-3">
-                                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    <span className="text-white font-medium">Settings</span>
-                                </div>
-                            </button>
-                            
-                            <button
-                                onClick={() => handleAction(onArchivesClick)}
-                                className="w-full p-4 bg-slate-800 hover:bg-slate-700 rounded-lg text-left transition-colors"
-                            >
-                                <div className="flex items-center space-x-3">
-                                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8l6 6 6-6" />
-                                    </svg>
-                                    <span className="text-white font-medium">Archives</span>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                );
-            };
-
-            // Mobile version
-            if (isMobile) {
-                return (
-                    <>
-                        {!showMobileMenu && (
-                            <button
-                                onClick={() => setShowMobileMenu(true)}
-                                className="mobile-menu-btn px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow-lg"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                            </button>
-                        )}
-
-                        {showMobileMenu && (
-                            <ViewOnlyMenu
-                                onClose={() => setShowMobileMenu(false)}
-                                onSettingsClick={() => setShowSettings(true)}
-                                onArchivesClick={() => setShowArchives(true)}
-                            />
-                        )}
-
-                        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-                        {showArchives && <ArchivesModal onClose={() => setShowArchives(false)} />}
-                    </>
-                );
-            }
-
-            // Desktop version - show nothing for view-only mode on desktop
-            return null;
-        };
-
         // Draft Controls Component
         const DraftControls = () => {
             const [showSettings, setShowSettings] = useState(false);
@@ -6359,7 +6270,6 @@
                                 </p>
                             </div>
                             {!isViewOnly && <DraftControls />}
-                            {isViewOnly && <ViewOnlyMobileMenu />}
                         </div>
 
                         {/* FIX 2: Archive persistence notification */}
