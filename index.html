@@ -133,14 +133,15 @@
         }
 
         /* Improved mobile controls */
-        @media (max-width: 640px) {
+        @media (max-width: 1024px) {
             .mobile-menu-btn {
-                position: fixed;
-                top: 1rem;
-                left: 1rem;
-                z-index: 100;
-                padding: 0.75rem;
-                border-radius: 0.75rem;
+                position: fixed !important;
+                top: 1rem !important;
+                left: 1rem !important;
+                z-index: 10001 !important;
+                padding: 0.75rem !important;
+                border-radius: 0.75rem !important;
+                display: block !important;
             }
             
             /* Add top padding to prevent hamburger menu overlap */
