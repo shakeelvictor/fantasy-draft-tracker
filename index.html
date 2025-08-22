@@ -4837,7 +4837,7 @@
                                                     key={round}
                                                     className={`
                                                         draft-pick-card min-h-[70px] sm:min-h-[80px] glass rounded-lg p-2 sm:p-3 text-xs
-                                                        ${pick && playerInfo ? getPositionCardBg(playerInfo.player?.position) : ''}
+                                                        ${pick && playerInfo ? getPositionCardBg(playerInfo.position) : ''}
                                                         ${pick && !pick.pending ? 'new-pick' : 'bg-slate-900/30'}
                                                         ${pick?.pending ? 'bg-yellow-900/30 border border-yellow-600/50' : ''}
                                                         ${isCurrentPick ? 'on-clock' : ''}
