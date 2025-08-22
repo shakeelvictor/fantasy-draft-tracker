@@ -593,7 +593,7 @@
             right: 0;
             top: 50%;
             transform: translateY(-50%);
-            z-index: 100;
+            z-index: 200;
             transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
@@ -603,6 +603,14 @@
 
         .panel-toggle.shifted {
             right: 400px;
+        }
+
+        /* Ensure toggle is always visible on desktop */
+        @media (min-width: 769px) {
+            .panel-toggle {
+                display: block !important;
+                visibility: visible !important;
+            }
         }
 
         /* Mobile panel toggle */
@@ -1072,7 +1080,7 @@
                     selectedPosition: 'ALL',
                     searchQuery: '',
                     showAvailableOnly: true,
-                    showPlayerPanel: true,
+                    showPlayerPanel: false, // Start with panel hidden so toggle is more obvious
                     archivedDrafts: [],
                     currentDraftId: null,
                     recentPick: null,
@@ -2469,7 +2477,9 @@
             }
 
             togglePlayerPanel() {
-                this.setState({ showPlayerPanel: !this.state.showPlayerPanel });
+                const newState = !this.state.showPlayerPanel;
+                console.log('Toggling player panel:', this.state.showPlayerPanel, '->', newState);
+                this.setState({ showPlayerPanel: newState });
             }
 
             setViewOnlyMode(isViewOnly) {
@@ -5060,7 +5070,10 @@
             // Panel toggle button
             const PanelToggle = () => (
                 <button
-                    onClick={togglePlayerPanel}
+                    onClick={() => {
+                        console.log('Panel toggle clicked, current state:', showPlayerPanel);
+                        togglePlayerPanel();
+                    }}
                     className={`panel-toggle bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-l-lg shadow-lg hover:shadow-xl transition-all ${showPlayerPanel ? 'shifted' : ''}`}
                     title={showPlayerPanel ? "Hide Players" : "Show Players"}
                 >
