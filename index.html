@@ -2241,8 +2241,8 @@
 
                 console.log('New keepers after update:', newKeepers);
 
-                // Update state and force immediate save
-                this.setState({ keepers: newKeepers });
+                // Update state and force immediate save with broadcast to database
+                this.setState({ keepers: newKeepers }, true);
 
                 // Force immediate save to localStorage
                 this.saveState();
@@ -2295,7 +2295,8 @@
                     round: currentPick.round,
                     pickNumber: currentPick.pickNumber,
                     pickInRound: currentPick.pickInRound,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    isKeeper: isKeeper || hasKeeper === playerId
                 };
 
                 // Calculate next pick, skipping teams with keepers
@@ -2376,7 +2377,16 @@
                     return;
                 }
 
-                const { currentHistoryIndex, history, picks, draftSettings } = this.state;
+                const { currentHistoryIndex, history, picks, draftSettings, keepers } = this.state;
+                
+                // Check if the last pick was a keeper - if so, prevent undoing
+                if (picks.length > 0) {
+                    const lastPick = picks[picks.length - 1];
+                    if (lastPick.isKeeper || Object.values(keepers || {}).includes(lastPick.playerId)) {
+                        showToast('Cannot undo keeper picks. Use the Keepers modal to manage keepers.', 'error');
+                        return;
+                    }
+                }
                 
                 // If we have history, use it
                 if (currentHistoryIndex >= 0 && history[currentHistoryIndex]) {
@@ -5722,6 +5732,7 @@
             const [showKeepers, setShowKeepers] = useState(false);
             const [showMobileMenu, setShowMobileMenu] = useState(false);
             const {
+                keepers,
                 undoPick,
                 currentHistoryIndex,
                 history,
@@ -5733,7 +5744,11 @@
             } = useDraftStore();
 
             const isMobile = useIsMobile();
-            const canUndo = picks.length > 0; // Always allow undo if there are any picks
+            // Check if last pick can be undone (not a keeper)
+            const canUndo = picks.length > 0 && (() => {
+                const lastPick = picks[picks.length - 1];
+                return lastPick && !lastPick.isKeeper && !Object.values(keepers || {}).includes(lastPick.playerId);
+            })();
             const isDraftComplete = !currentPick && picks.length > 0;
 
             // Mobile menu component
