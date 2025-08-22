@@ -420,6 +420,73 @@
             box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
         }
 
+        /* Position-based card backgrounds with transparency for readability */
+        .card-bg-qb {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        .card-bg-rb {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.1) 100%);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        .card-bg-wr {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        .card-bg-te {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(234, 88, 12, 0.1) 100%);
+            border-color: rgba(249, 115, 22, 0.4);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        .card-bg-k {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(147, 51, 234, 0.1) 100%);
+            border-color: rgba(168, 85, 247, 0.4);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        .card-bg-dst {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(202, 138, 4, 0.1) 100%);
+            border-color: rgba(234, 179, 8, 0.4);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        .card-bg-idp {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Ensure text remains visible on position-colored backgrounds on all devices */
+        .card-bg-qb .text-white,
+        .card-bg-rb .text-white,
+        .card-bg-wr .text-white,
+        .card-bg-te .text-white,
+        .card-bg-k .text-white,
+        .card-bg-dst .text-white,
+        .card-bg-idp .text-white {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Ensure slate text remains readable on colored backgrounds */
+        .card-bg-qb .text-slate-400,
+        .card-bg-rb .text-slate-400,
+        .card-bg-wr .text-slate-400,
+        .card-bg-te .text-slate-400,
+        .card-bg-k .text-slate-400,
+        .card-bg-dst .text-slate-400,
+        .card-bg-idp .text-slate-400 {
+            color: rgba(148, 163, 184, 0.9);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
         /* Keeper badge */
         .keeper-badge {
             background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
@@ -4545,6 +4612,18 @@
                 return positionMap[position] || 'position-idp';
             };
 
+            const getPositionCardBg = (position) => {
+                const positionMap = {
+                    'QB': 'card-bg-qb',
+                    'RB': 'card-bg-rb',
+                    'WR': 'card-bg-wr',
+                    'TE': 'card-bg-te',
+                    'K': 'card-bg-k',
+                    'DST': 'card-bg-dst'
+                };
+                return positionMap[position] || 'card-bg-idp';
+            };
+
             return (
                 <div className={`player-overlay ${fadeOut ? 'fade-out' : ''}`}>
                     <div className="player-overlay-card">
@@ -4683,6 +4762,18 @@
                 return positionMap[position] || 'position-idp';
             };
 
+            const getPositionCardBg = (position) => {
+                const positionMap = {
+                    'QB': 'card-bg-qb',
+                    'RB': 'card-bg-rb',
+                    'WR': 'card-bg-wr',
+                    'TE': 'card-bg-te',
+                    'K': 'card-bg-k',
+                    'DST': 'card-bg-dst'
+                };
+                return positionMap[position] || 'card-bg-idp';
+            };
+
             return (
                 <div className="glass-dark rounded-xl p-3 sm:p-6 shadow-2xl">
                     <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
@@ -4746,7 +4837,8 @@
                                                     key={round}
                                                     className={`
                                                         draft-pick-card min-h-[70px] sm:min-h-[80px] glass rounded-lg p-2 sm:p-3 text-xs
-                                                        ${pick && !pick.pending ? 'bg-slate-800/50 new-pick' : 'bg-slate-900/30'}
+                                                        ${pick && playerInfo ? getPositionCardBg(playerInfo.player?.position) : ''}
+                                                        ${pick && !pick.pending ? 'new-pick' : 'bg-slate-900/30'}
                                                         ${pick?.pending ? 'bg-yellow-900/30 border border-yellow-600/50' : ''}
                                                         ${isCurrentPick ? 'on-clock' : ''}
                                                         flex flex-col justify-center
@@ -5043,6 +5135,18 @@
                 return positionMap[position] || 'position-idp';
             };
 
+            const getPositionCardBg = (position) => {
+                const positionMap = {
+                    'QB': 'card-bg-qb',
+                    'RB': 'card-bg-rb',
+                    'WR': 'card-bg-wr',
+                    'TE': 'card-bg-te',
+                    'K': 'card-bg-k',
+                    'DST': 'card-bg-dst'
+                };
+                return positionMap[position] || 'card-bg-idp';
+            };
+
 
             const handlePlayerSelect = (player) => {
                 // Don't allow selection of keeper players
@@ -5199,11 +5303,12 @@
                                                 key={player.player_id}
                                                 className={`
                                                     player-card glass p-3 rounded-lg border
+                                                    ${getPositionCardBg(player.position)}
                                                     ${isDrafted
                                                         ? 'opacity-50 drafted border-slate-700 cursor-not-allowed'
                                                         : isKeeper 
                                                         ? 'opacity-50 border-yellow-600 cursor-not-allowed'
-                                                        : 'border-slate-600 hover:border-purple-500 cursor-pointer'
+                                                        : 'hover:border-purple-500 cursor-pointer'
                                                     }
                                                     ${!isDrafted && !isKeeper && currentPick ? 'pulse-on-hover' : ''}
                                                 `}
@@ -5350,11 +5455,12 @@
                                                 key={player.player_id}
                                                 className={`
                                                     player-card glass p-4 rounded-lg border
+                                                    ${getPositionCardBg(player.position)}
                                                     ${isDrafted
                                                         ? 'opacity-50 drafted border-slate-700 cursor-not-allowed'
                                                         : isKeeper 
                                                         ? 'opacity-50 border-yellow-600 cursor-not-allowed'
-                                                        : 'border-slate-600 hover:border-purple-500 cursor-pointer'
+                                                        : 'hover:border-purple-500 cursor-pointer'
                                                     }
                                                     ${!isDrafted && !isKeeper && currentPick ? 'pulse-on-hover' : ''}
                                                 `}
