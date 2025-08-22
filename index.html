@@ -4856,7 +4856,10 @@
                                                     {pick && playerInfo ? (
                                                         <div 
                                                             className={`fade-in cursor-pointer hover:bg-slate-700/30 rounded p-1 transition-colors ${pick.pending ? 'opacity-60' : ''}`}
-                                                            onClick={() => onPlayerInfoClick && onPlayerInfoClick(playerInfo.player)}
+                                                            onClick={() => onPlayerInfoClick && onPlayerInfoClick({
+                                                                ...playersData[playerInfo.id],
+                                                                player_id: playerInfo.id
+                                                            })}
                                                             title="Click for FantasyPros expert analysis"
                                                         >
                                                             <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
@@ -4871,7 +4874,6 @@
                                                                 <div className="font-bold text-white text-xs sm:text-sm flex-1 leading-tight">
                                                                     <div className={isMobile ? "text-[10px] leading-tight overflow-hidden" : ""}>
                                                                         {playerInfo.name}
-                                                                        <span className="ml-1 text-purple-400 text-[8px]">ℹ️</span>
                                                                     </div>
                                                                     {pick.pending && (
                                                                         <span className="text-yellow-400 text-[8px] ml-1">(KEEPER)</span>
