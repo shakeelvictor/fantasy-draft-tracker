@@ -814,7 +814,7 @@
         .view-only-player-panel {
             position: relative;
         }
-        
+
         .view-only-player-panel::before {
             content: '';
             position: absolute;
@@ -828,7 +828,7 @@
             pointer-events: none;
             z-index: 1;
         }
-        
+
         .view-only-header {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
@@ -845,7 +845,7 @@
             .view-only-player-panel {
                 margin: 1rem 0;
             }
-            
+
             .view-only-header {
                 padding: 0.5rem 0.75rem;
                 font-size: 0.875rem;
@@ -906,12 +906,12 @@
                 right: 0 !important;
                 top: 0 !important;
             }
-            
+
             .view-only-header {
                 padding: 0.625rem 1rem;
                 font-size: 0.9375rem;
             }
-            
+
             /* Adjust mobile player panel for tablet in view-only mode */
             .mobile-player-panel.view-only-mobile {
                 position: relative !important;
@@ -930,7 +930,7 @@
                 margin: 0.75rem 0;
                 padding: 1rem !important;
             }
-            
+
             .view-only-header {
                 margin-bottom: 0.75rem;
                 font-size: 0.8125rem;
@@ -1097,7 +1097,7 @@
 
                 // Setup real-time sync listener
                 this.setupRealTimeSync();
-                
+
                 // Load initial state from database for all users to get keepers and other data
                 this.loadInitialStateFromDatabase();
 
@@ -1270,9 +1270,9 @@
 
                 // Enable polling for ALL users when deployed to enable real-time collaboration
                 // Check if we're in a deployed environment (not localhost)
-                const isDeployed = !window.location.hostname.includes('localhost') && 
+                const isDeployed = !window.location.hostname.includes('localhost') &&
                                  !window.location.hostname.includes('127.0.0.1');
-                
+
                 // Start database polling for real-time sync on all deployed environments
                 if (isDeployed) {
                     console.log('🌐 Starting database polling for real-time sync');
@@ -1285,7 +1285,7 @@
 
             startDatabasePolling() {
                 console.log('🔄 Starting database polling for real-time sync');
-                
+
                 // Poll database every 3 seconds for real-time updates (optimized for multiple users)
                 this.pollingInterval = setInterval(async () => {
                     try {
@@ -1294,7 +1294,7 @@
                     } catch (error) {
                         console.error('❌ Error polling database:', error);
                         this.pollFailureCount = (this.pollFailureCount || 0) + 1;
-                        
+
                         // Implement exponential backoff on repeated failures
                         if (this.pollFailureCount >= 3) {
                             console.warn('⚠️ Multiple polling failures, temporarily slowing down');
@@ -1320,7 +1320,7 @@
                     const response = await fetch('/api/draft-state', {
                         method: 'GET',
                         cache: 'no-cache',
-                        headers: { 
+                        headers: {
                             'Cache-Control': 'no-cache',
                             'Pragma': 'no-cache'
                         }
@@ -1347,14 +1347,14 @@
                         if (serverTimestamp > localTimestamp + 100) {
                             console.log(`✅ ${isViewOnlyMode} Updating from database - picks changed from ${this.state.picks?.length || 0} to ${data.state?.picks?.length || 0}`);
                             console.log(`🔍 ${isViewOnlyMode} Recent pick from database:`, data.state?.recentPick);
-                            
+
                             // Merge the server state with current state
                             const mergedState = this.mergeStates(this.state, data.state);
                             this.state = {
                                 ...mergedState,
                                 lastUpdate: serverTimestamp
                             };
-                            
+
                             // Notify components without broadcasting (prevent loops)
                             console.log(`🔔 ${isViewOnlyMode} Notifying components of database update`);
                             this.notify(false);
@@ -1387,7 +1387,7 @@
                     const response = await fetch('/api/draft-state', {
                         method: 'GET',
                         cache: 'no-cache',
-                        headers: { 
+                        headers: {
                             'Cache-Control': 'no-cache',
                             'Pragma': 'no-cache'
                         }
@@ -1401,17 +1401,17 @@
                             teams: data.state?.teams?.length || 0,
                             timestamp: new Date(data.timestamp).toLocaleTimeString()
                         });
-                        
+
                         // Intelligently merge database state with existing state
                         const currentKeepers = this.state.keepers || {};
                         const databaseKeepers = data.state?.keepers || {};
                         const hasLocalKeepers = Object.keys(currentKeepers).length > 0;
                         const hasDatabaseKeepers = Object.keys(databaseKeepers).length > 0;
-                        
+
                         // Use database keepers if local storage is empty but database has keepers
-                        const keepersToUse = hasLocalKeepers ? currentKeepers : 
+                        const keepersToUse = hasLocalKeepers ? currentKeepers :
                                            (hasDatabaseKeepers ? databaseKeepers : {});
-                        
+
                         console.log(`🔄 ${mode} Keeper merge decision:`, {
                             hasLocalKeepers,
                             hasDatabaseKeepers,
@@ -1426,17 +1426,17 @@
                             playersData: this.state.playersData || {}, // Preserve existing player data
                             lastUpdate: data.timestamp
                         };
-                        
+
                         // Rebuild history if we have picks but no history (for undo functionality)
                         if (!this.isViewOnly && this.state.picks && this.state.picks.length > 0 && (!this.state.history || this.state.history.length === 0)) {
                             console.log('🔧 Rebuilding undo history for database state with existing picks');
                             this.state.history = this.rebuildHistoryFromPicks(this.state.picks, this.state.teams, this.state.draftSettings);
                             this.state.currentHistoryIndex = this.state.history.length - 1;
                         }
-                        
+
                         // Notify components to update UI
                         this.notify(false);
-                        
+
                         // Also load player data
                         console.log(`🔄 ${mode} Loading player data...`);
                         await this.loadPlayersData();
@@ -1454,7 +1454,7 @@
                     const response = await fetch('/api/load-archives', {
                         method: 'GET',
                         cache: 'no-cache',
-                        headers: { 
+                        headers: {
                             'Cache-Control': 'no-cache',
                             'Pragma': 'no-cache'
                         }
@@ -1463,15 +1463,15 @@
                     if (response.ok) {
                         const data = await response.json();
                         const databaseArchives = data.archives || [];
-                        
+
                         console.log(`✅ Loaded ${databaseArchives.length} archives from database`);
-                        
+
                         // Merge with local archives (database takes precedence)
                         const localArchives = this.state.archivedDrafts || [];
-                        
+
                         // Create a map of database archives for quick lookup
                         const dbArchiveMap = new Map(databaseArchives.map(archive => [archive.id, archive]));
-                        
+
                         // Start with database archives, then add local ones that aren't in database
                         const mergedArchives = [...databaseArchives];
                         localArchives.forEach(localArchive => {
@@ -1481,15 +1481,15 @@
                                 this.saveArchiveToDatabase(localArchive);
                             }
                         });
-                        
+
                         // Sort by date (newest first)
                         mergedArchives.sort((a, b) => new Date(b.date) - new Date(a.date));
-                        
+
                         this.setState({ archivedDrafts: mergedArchives });
-                        
+
                         // Update localStorage with merged archives
                         localStorage.setItem('fantasy-draft-archives', JSON.stringify(mergedArchives));
-                        
+
                     } else {
                         console.warn('⚠️ Failed to load archives from database, using local only');
                     }
@@ -1507,7 +1507,7 @@
                         },
                         body: JSON.stringify({ archive })
                     });
-                    
+
                     if (response.ok) {
                         console.log(`✅ Saved local archive ${archive.id} to database`);
                     }
@@ -1520,13 +1520,13 @@
             rebuildHistoryFromPicks(picks, teams, draftSettings) {
                 console.log('🔧 Rebuilding history from', picks.length, 'picks');
                 const history = [];
-                
+
                 // Sort picks by round and pick order to ensure correct chronological order
                 const sortedPicks = [...picks].sort((a, b) => {
                     if (a.round !== b.round) return a.round - b.round;
                     return a.pickInRound - b.pickInRound;
                 });
-                
+
                 // Build history by simulating each pick
                 let currentPicks = [];
                 let currentPickState = {
@@ -1535,7 +1535,7 @@
                     pickInRound: 1,
                     teamId: 'team-1'
                 };
-                
+
                 sortedPicks.forEach((pick, index) => {
                     // Create a history entry for the state BEFORE this pick was made
                     history.push({
@@ -1543,10 +1543,10 @@
                         currentPick: { ...currentPickState },
                         keepers: {} // We don't have historical keeper data, so use empty object
                     });
-                    
+
                     // Add this pick to the picks array
                     currentPicks.push(pick);
-                    
+
                     // Calculate the next pick state
                     if (index < sortedPicks.length - 1) {
                         const nextPick = sortedPicks[index + 1];
@@ -1558,7 +1558,7 @@
                         };
                     }
                 });
-                
+
                 console.log('🔧 Rebuilt history with', history.length, 'entries');
                 return history;
             }
@@ -1566,15 +1566,15 @@
             // Intelligent state merging to preserve local changes
             mergeStates(localState, remoteState) {
                 console.log('🔄 Merging states intelligently');
-                
+
                 // Always preserve essential structure from local state
                 const merged = {
                     ...localState,
                     ...remoteState,
                     // Always keep teams and draftSettings from local if they exist
                     teams: localState.teams && localState.teams.length > 0 ? localState.teams : remoteState.teams,
-                    draftSettings: localState.draftSettings && Object.keys(localState.draftSettings).length > 0 
-                        ? localState.draftSettings 
+                    draftSettings: localState.draftSettings && Object.keys(localState.draftSettings).length > 0
+                        ? localState.draftSettings
                         : remoteState.draftSettings
                 };
 
@@ -1593,7 +1593,7 @@
                     const localPicks = localState.picks || [];
                     const remotePicks = remoteState.picks || [];
                     const pickMap = new Map();
-                    
+
                     // Add all picks to map (remote first, then local to prioritize local)
                     [...remotePicks, ...localPicks].forEach(pick => {
                         if (pick && pick.teamId && pick.round) {
@@ -1601,21 +1601,21 @@
                             pickMap.set(key, pick);
                         }
                     });
-                    
+
                     merged.picks = Array.from(pickMap.values());
-                    
+
                     // Always preserve local history and currentHistoryIndex for interactive users
                     // This ensures undo functionality remains available regardless of sync operations
                     merged.history = localState.history || [];
                     merged.currentHistoryIndex = localState.currentHistoryIndex >= 0 ? localState.currentHistoryIndex : -1;
-                    
+
                     // If we have picks but no history, rebuild the history to enable undo functionality
                     if (merged.picks.length > 0 && merged.history.length === 0) {
                         console.log('🔧 Rebuilding undo history for existing picks');
                         merged.history = this.rebuildHistoryFromPicks(merged.picks, merged.teams, merged.draftSettings);
                         merged.currentHistoryIndex = merged.history.length - 1;
                     }
-                    
+
                     console.log('🔄 Preserving local undo history in interactive mode - historyLength:', merged.history.length, 'currentIndex:', merged.currentHistoryIndex);
                 }
 
@@ -1626,7 +1626,7 @@
                     const remoteKeepers = remoteState.keepers || {};
                     const hasLocalKeepers = Object.keys(localKeepers).length > 0;
                     const hasRemoteKeepers = Object.keys(remoteKeepers).length > 0;
-                    
+
                     if (hasLocalKeepers) {
                         // Prefer local keepers (user has made recent changes)
                         merged.keepers = { ...remoteKeepers, ...localKeepers };
@@ -1670,9 +1670,9 @@
                         console.log('⏭️ Skipping poll - recent push detected');
                         return;
                     }
-                    
+
                     console.log('🔗 Fetching from shared state endpoint');
-                    
+
                     // Try the API endpoint
                     let response;
                     try {
@@ -1696,23 +1696,23 @@
                             }
                         });
                     }
-                    
+
                     console.log('📊 Response status:', response.status, response.statusText);
-                    
+
                     if (response.ok) {
                         const sharedData = await response.json();
-                        console.log('📥 Received shared data:', { 
-                            timestamp: sharedData.timestamp, 
+                        console.log('📥 Received shared data:', {
+                            timestamp: sharedData.timestamp,
                             currentTimestamp: this.state.lastUpdate,
                             picksCount: sharedData.state?.picks?.length || 0,
                             keepersCount: Object.keys(sharedData.state?.keepers || {}).length,
                             currentPick: sharedData.state?.currentPick,
                             isNewer: sharedData.timestamp > (this.state.lastUpdate || 0)
                         });
-                        
+
                         if (sharedData.timestamp > (this.state.lastUpdate || 0)) {
                             console.log('✅ Merging state from shared endpoint');
-                            
+
                             // Intelligent merge instead of overwrite
                             const mergedState = this.mergeStates(this.state, sharedData.state);
                             this.state = {
@@ -1746,7 +1746,7 @@
                 try {
                     const urlParams = new URLSearchParams(window.location.search);
                     const sharedStateParam = urlParams.get('state');
-                    
+
                     if (sharedStateParam) {
                         const decodedState = JSON.parse(decodeURIComponent(sharedStateParam));
                         if (decodedState.timestamp > (this.state.lastUpdate || 0)) {
@@ -1767,7 +1767,7 @@
                 // Broadcast state changes for real-time sync
                 try {
                     console.log('📢 Broadcasting update...');
-                    
+
                     // Method 1: Save to localStorage for same-browser sync
                     const sharedData = {
                         timestamp: Date.now(),
@@ -1781,10 +1781,10 @@
                             draftJustCompleted: this.state.draftJustCompleted
                         }
                     };
-                    
-                    console.log('💾 Saving to localStorage:', { 
-                        timestamp: sharedData.timestamp, 
-                        picks: sharedData.state.picks.length 
+
+                    console.log('💾 Saving to localStorage:', {
+                        timestamp: sharedData.timestamp,
+                        picks: sharedData.state.picks.length
                     });
                     localStorage.setItem('fantasy-draft-shared', JSON.stringify(sharedData));
 
@@ -1806,7 +1806,7 @@
                         keepersCount: Object.keys(data.state?.keepers || {}).length,
                         currentPick: data.state?.currentPick
                     });
-                    
+
                     // Try to push to a Netlify Function or API endpoint
                     const response = await fetch('/api/update-draft-state', {
                         method: 'POST',
@@ -1815,14 +1815,14 @@
                         },
                         body: JSON.stringify(data)
                     });
-                    
+
                     console.log('📊 Push response status:', response.status, response.statusText);
-                    
+
                     if (response.ok) {
                         const result = await response.json();
                         console.log('✅ Successfully pushed state to shared endpoint:', result);
                         this.lastPushTime = Date.now(); // Record when we pushed
-                        
+
                         // Trigger immediate polling for all connected clients after 200ms delay
                         setTimeout(() => {
                             this.triggerImmediateSync();
@@ -1846,22 +1846,22 @@
                 try {
                     // Enhanced localStorage broadcasting with timestamp
                     console.log('📻 Broadcasting via localStorage with timestamp:', data.timestamp);
-                    
+
                     // Trigger storage event for cross-tab sync
                     localStorage.setItem('fantasy-draft-sync', JSON.stringify({
                         timestamp: data.timestamp,
                         state: data.state,
                         broadcastId: Math.random().toString(36).substr(2, 9)
                     }));
-                    
+
                     // Generate shareable URL for cross-device sharing
                     this.generateShareableURL(data);
-                    
+
                     // Show toast to inform user about sharing method
                     if (typeof showToast === 'function') {
                         showToast('Real-time sync active via localStorage. Share URL for cross-device viewing.', 'info');
                     }
-                    
+
                 } catch (error) {
                     console.error('❌ Error in localStorage broadcast:', error);
                 }
@@ -1875,13 +1875,13 @@
                         currentPick: data.state.currentPick,
                         timestamp: data.timestamp
                     };
-                    
+
                     const encodedState = encodeURIComponent(JSON.stringify(compressedState));
                     const shareableURL = `${window.location.origin}${window.location.pathname}?view=true&state=${encodedState}`;
-                    
+
                     // Store the shareable URL for easy access
                     localStorage.setItem('fantasy-draft-share-url', shareableURL);
-                    
+
                 } catch (error) {
                     console.log('Could not generate shareable URL:', error);
                 }
@@ -1893,7 +1893,7 @@
                     // Load main state
                     const saved = localStorage.getItem('fantasy-draft-state');
                     let savedState = null;
-                    
+
                     try {
                         savedState = saved ? JSON.parse(saved) : null;
                     } catch (parseError) {
@@ -1993,7 +1993,7 @@
                     };
                 } catch (e) {
                     console.error('Could not load saved state, starting fresh:', e);
-                    
+
                     // Clear any corrupted data
                     try {
                         localStorage.removeItem('fantasy-draft-state');
@@ -2002,7 +2002,7 @@
                     } catch (clearError) {
                         console.warn('Could not clear localStorage:', clearError);
                     }
-                    
+
                     return this.getInitialState();
                 }
             }
@@ -2449,7 +2449,7 @@
                 }
 
                 const { currentHistoryIndex, history, picks, draftSettings, keepers } = this.state;
-                
+
                 // Check if the last pick was a keeper - if so, prevent undoing
                 if (picks.length > 0) {
                     const lastPick = picks[picks.length - 1];
@@ -2458,7 +2458,7 @@
                         return;
                     }
                 }
-                
+
                 // If we have history, use it
                 if (currentHistoryIndex >= 0 && history[currentHistoryIndex]) {
                     const previousState = history[currentHistoryIndex];
@@ -2476,7 +2476,7 @@
                     // No history available, but we have picks - just remove the last pick
                     const newPicks = [...picks];
                     const removedPick = newPicks.pop();
-                    
+
                     // The current pick should be the pick that was just removed
                     const newCurrentPick = {
                         round: removedPick.round,
@@ -2484,7 +2484,7 @@
                         pickInRound: removedPick.pickInRound,
                         teamId: removedPick.teamId
                     };
-                    
+
                     showToast('Last pick undone', 'success');
 
                     this.setState({
@@ -2550,10 +2550,10 @@
 
             resetDraft() {
                 console.log('🔄 Resetting draft board...');
-                
+
                 // Get initial state but preserve archived drafts and player data
                 const initialState = this.getInitialState();
-                
+
                 this.setState({
                     ...initialState,
                     archivedDrafts: this.state.archivedDrafts, // Preserve archives
@@ -2568,7 +2568,7 @@
 
             async deleteArchivedDraft(draftId) {
                 console.log('🗑️ Deleting archived draft:', draftId);
-                
+
                 const draft = this.state.archivedDrafts.find(d => d.id === draftId);
                 if (!draft) {
                     showToast('Archive not found', 'error');
@@ -2596,7 +2596,7 @@
 
                 // Remove from local state and localStorage
                 const updatedArchives = this.state.archivedDrafts.filter(d => d.id !== draftId);
-                
+
                 this.setState({
                     archivedDrafts: updatedArchives,
                     // If we're currently viewing this draft, reset the current draft ID
@@ -2827,7 +2827,7 @@
                     const leagueName = draftSettings?.leagueName || 'Fantasy_Draft';
                     const safeName = leagueName.replace(/[^a-z0-9]/gi, '_');
                     const fileName = `${safeName}_draft_${new Date().getTime()}.xlsx`;
-                    
+
                     console.log('📊 Exporting file:', fileName);
                     XLSX.writeFile(wb, fileName);
 
@@ -2960,7 +2960,7 @@
                     teamCount: draftStore.state?.draftSettings?.teamCount,
                     stateKeys: Object.keys(draftStore.state || {})
                 });
-                
+
                 const unsubscribe = draftStore.subscribe((newState) => {
                     console.log('useDraftStore: State update received:', {
                         hasTeams: !!newState?.teams,
@@ -2970,7 +2970,7 @@
                     });
                     setState(newState);
                 });
-                
+
                 return unsubscribe;
             }, []);
 
@@ -3267,10 +3267,10 @@
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const [closing, setClosing] = useState(false);
-            
-            const { 
-                makePick, 
-                currentPick, 
+
+            const {
+                makePick,
+                currentPick,
                 picks,
                 playersData,
                 keepers
@@ -3281,7 +3281,7 @@
 
             // Check if this player is already drafted
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
-            
+
             // Check if player is a keeper (simple check - if player ID exists in keepers object values)
             const isKeeper = Object.values(keepers || {}).includes(player.player_id);
             const canDraft = currentPick && !isDrafted && !isViewOnly && !isKeeper;
@@ -3289,24 +3289,24 @@
             useEffect(() => {
                 const fetchFantasyProData = async () => {
                     if (!player) return;
-                    
+
                     setLoading(true);
                     setError(null);
-                    
+
                     try {
                         const playerName = `${player.first_name} ${player.last_name}`;
                         console.log('Fetching real expert analysis for:', playerName);
-                        
+
                         let expertData = null;
                         let dataSource = 'Unknown';
-                        
+
                         // Fetch latest news first
                         const latestNews = await fetchPlayerNews(player);
                         console.log(`📰 Found ${latestNews.length} news items for ${playerName}`);
-                        
+
                         // Get accurate player rankings based on 2025 consensus data
                         const playerRanking = getAccuratePlayerRankings(player);
-                        
+
                         // Try multiple real data sources in order of preference
                         const dataSources = [
                             () => fetchSleeperData(player),
@@ -3314,7 +3314,7 @@
                             () => fetchTheScoreData(player),
                             () => fetchTheSportsDBData(player)
                         ];
-                        
+
                         for (const fetchFunction of dataSources) {
                             try {
                                 const result = await fetchFunction();
@@ -3329,14 +3329,14 @@
                                 continue;
                             }
                         }
-                        
+
                         // If no real data found, use intelligent fallback
                         if (!expertData) {
                             console.log('📝 Using intelligent fallback - no real API data available');
                             expertData = generateIntelligentFallback(player);
                             dataSource = 'Fallback Analysis';
                         }
-                        
+
                         // Helper function to get round from ADP
                         const getADPRound = (adp) => {
                             // Ensure adp is a number and handle invalid values
@@ -3344,7 +3344,7 @@
                             if (isNaN(numericADP) || numericADP <= 0) {
                                 return 'N/A';
                             }
-                            
+
                             const round = Math.ceil(numericADP / 12); // 12-team league assumption
                             const pick = ((numericADP - 1) % 12) + 1;
                             return `${round}.${pick.toString().padStart(2, '0')} (${numericADP.toFixed(1)})`;
@@ -3369,9 +3369,9 @@
                             avgDiff: playerRanking.avgDiff,
                             percentOver: playerRanking.percentOver
                         };
-                        
+
                         setFantasyProData(finalData);
-                        
+
                     } catch (err) {
                         console.error('Error generating FantasyPros data:', err);
                         setError('Unable to load player analysis');
@@ -3394,24 +3394,24 @@
             const fetchPlayerNews = async (player) => {
                 const playerName = `${player.first_name} ${player.last_name}`;
                 const newsResults = [];
-                
+
                 console.log(`📰 Fetching latest news for ${playerName}...`);
-                
+
                 try {
                     // Use the new enhanced news system
                     const realNews = await fetchRealPlayerNews(player);
                     newsResults.push(...realNews);
-                    
+
                 } catch (error) {
                     console.error(`❌ Error fetching news for ${playerName}:`, error);
                 }
-                
+
                 // If no real news found, provide basic player context
                 if (newsResults.length === 0) {
                     const playerContext = generatePlayerContext(player);
                     newsResults.push(...playerContext);
                 }
-                
+
                 // Return formatted news items
                 return newsResults.slice(0, 4);
             };
@@ -3419,16 +3419,16 @@
 
 
             // ENHANCED NEWS AND RANKINGS SYSTEM
-            
+
             // Multi-source news aggregation with clickable links
             const fetchRealPlayerNews = async (player) => {
                 const playerName = `${player.first_name} ${player.last_name}`;
                 const news = [];
-                
+
                 try {
                     console.log(`📰 Fetching real news for ${playerName} from multiple sources...`);
-                    
-                    
+
+
                     // NFL.com Player Profile
                     try {
                         const nflUrl = `https://www.nfl.com/players/${player.first_name.toLowerCase()}-${player.last_name.toLowerCase()}`;
@@ -3441,33 +3441,33 @@
                     } catch (error) {
                         console.log('NFL.com link generation failed');
                     }
-                    
+
                     // Reddit Fantasy Football search
                     const redditNews = await fetchRedditFantasyNews(player);
                     news.push(...redditNews);
-                    
+
                     // Sleeper trending info
                     const sleeperTrends = await fetchSleeperPlayerTrends(player);
                     news.push(...sleeperTrends);
-                    
+
                 } catch (error) {
                     console.error(`❌ Error fetching news for ${playerName}:`, error);
                 }
-                
+
                 return news.slice(0, 4); // Return top 4 news items
             };
-            
+
 
             // Reddit Fantasy Football news with links
             const fetchRedditFantasyNews = async (player) => {
                 try {
                     const playerName = `${player.first_name} ${player.last_name}`;
                     const searchUrl = `https://www.reddit.com/r/fantasyfootball/search.json?q=${encodeURIComponent(playerName)}&restrict_sr=1&sort=new&limit=5&t=week`;
-                    
+
                     const response = await fetch(searchUrl, {
                         headers: { 'User-Agent': 'FantasyDraftTracker/1.0' }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         if (data.data && data.data.children && data.data.children.length > 0) {
@@ -3499,14 +3499,14 @@
                         fetch('https://api.sleeper.app/v1/players/nfl/trending/add?limit=50'),
                         fetch('https://api.sleeper.app/v1/players/nfl/trending/drop?limit=50')
                     ]);
-                    
+
                     const [addData, dropData] = await Promise.all([
                         addResponse.json(),
                         dropResponse.json()
                     ]);
-                    
+
                     const trends = [];
-                    
+
                     // Check if player is trending
                     const trendingAdds = addData.find(item => item.player_id === player.player_id);
                     if (trendingAdds) {
@@ -3517,7 +3517,7 @@
                             isLink: false
                         });
                     }
-                    
+
                     const trendingDrops = dropData.find(item => item.player_id === player.player_id);
                     if (trendingDrops) {
                         trends.push({
@@ -3527,7 +3527,7 @@
                             isLink: false
                         });
                     }
-                    
+
                     return trends;
                 } catch (error) {
                     return [];
@@ -3535,28 +3535,28 @@
             };
 
             // FANTASYPROS 2025 RANKINGS SYSTEM
-            
+
             // Function to load JSON data and create rankings objects
             const loadJSONRankings = async (jsonFile, isDefensive = false) => {
                 try {
                     console.log('📄 Loading rankings from:', jsonFile);
                     const response = await fetch(jsonFile);
-                    
+
                     if (!response.ok) {
                         throw new Error(`Failed to load ${jsonFile}: ${response.status}`);
                     }
-                    
+
                     const data = await response.json();
                     if (!Array.isArray(data)) {
                         throw new Error('JSON data is not an array');
                     }
-                    
+
                     const rankings = {};
-                    
+
                     data.forEach(player => {
                         const playerName = player['PLAYER NAME'];
                         if (!playerName) return;
-                        
+
                         const key = playerName.toLowerCase();
                         rankings[key] = {
                             rank: parseInt(player.RK) || 0,
@@ -3567,22 +3567,22 @@
                             sosRating: player['SOS SEASON'] || '-',
                             ecrVsAdp: player['ECR VS. ADP'] || '-'
                         };
-                        
+
                         // Add offensive-specific fields if not defensive
                         if (!isDefensive) {
                             rankings[key].avgDiff = player['AVG. DIFF '] || '-';
                             rankings[key].percentOver = player['% OVER '] || '-';
                         }
                     });
-                    
+
                     return rankings;
                 } catch (error) {
                     console.error('Error loading JSON rankings:', error);
                     return {};
                 }
             };
-            
-            
+
+
             // Static fallback data - FantasyPros 2025 Offensive Player Rankings Data
             const fantasyProsOffensiveRankingsStatic = {
                 "ja'marr chase": { rank: 1, tier: 1, position: "WR1", team: "CIN", byeWeek: "10", sosRating: "3 out of 5 stars", ecrVsAdp: "0", avgDiff: "+4.1", percentOver: "56% (9/16)" },
@@ -3638,7 +3638,7 @@
                 "travis kelce": { rank: 77, tier: 6, position: "TE6", team: "KC", byeWeek: "10", sosRating: "3 out of 5 stars", ecrVsAdp: "-15", avgDiff: "-1.9", percentOver: "37% (6/16)" },
                 "mark andrews": { rank: 78, tier: 6, position: "TE7", team: "BAL", byeWeek: "7", sosRating: "3 out of 5 stars", ecrVsAdp: "-3", avgDiff: "+1.8", percentOver: "62% (10/16)" }
             };
-            
+
             // Static fallback data - FantasyPros 2025 Defensive Player Rankings Data
             const fantasyProsDefensiveRankingsStatic = {
                 "zaire franklin": { rank: 1, tier: 1, position: "LB1", team: "IND", byeWeek: "11", sosRating: "-", ecrVsAdp: "-" },
@@ -3668,41 +3668,41 @@
                 "jordyn brooks": { rank: 25, tier: 4, position: "LB17", team: "MIA", byeWeek: "12", sosRating: "-", ecrVsAdp: "-" },
                 "travis hunter": { rank: 41, tier: 6, position: "CB1", team: "JAC", byeWeek: "8", sosRating: "4 out of 5 stars", ecrVsAdp: "-" }
             };
-            
+
             // Initialize dynamic rankings objects that will be populated from JSON files
             let fantasyProsOffensiveRankings = fantasyProsOffensiveRankingsStatic;
             let fantasyProsDefensiveRankings = fantasyProsDefensiveRankingsStatic;
-            
+
             // Load JSON data and update rankings on page initialization
             const initializeRankingsFromJSON = async () => {
                 try {
                     console.log('🔄 Attempting to load JSON ranking data...');
-                    
+
                     // Load offensive and defensive rankings from JSON files
                     const [offensiveRankings, defensiveRankings] = await Promise.all([
                         loadJSONRankings('./FantasyPros_2025_Draft_ALL_Rankings.json', false),
                         loadJSONRankings('./FantasyPros_2025_IDP.json', true)
                     ]);
-                    
+
                     // Update global rankings objects
                     fantasyProsOffensiveRankings = offensiveRankings;
                     fantasyProsDefensiveRankings = defensiveRankings;
-                    
+
                     console.log('✅ Successfully loaded rankings from JSON files');
                     console.log('Loaded ' + Object.keys(fantasyProsOffensiveRankings).length + ' offensive players');
                     console.log('Loaded ' + Object.keys(fantasyProsDefensiveRankings).length + ' defensive players');
-                    
+
                     // Display sample data
                     const offensiveKeys = Object.keys(fantasyProsOffensiveRankings);
                     const defensiveKeys = Object.keys(fantasyProsDefensiveRankings);
-                    
+
                     if (offensiveKeys.length > 0) {
                         console.log('📊 Sample offensive player:', offensiveKeys[0], fantasyProsOffensiveRankings[offensiveKeys[0]]);
                     }
                     if (defensiveKeys.length > 0) {
                         console.log('🛡️ Sample defensive player:', defensiveKeys[0], fantasyProsDefensiveRankings[defensiveKeys[0]]);
                     }
-                    
+
                 } catch (error) {
                     console.log('⚠️ Failed to load JSON data, using static fallback:', error.message);
                     // Keep using static data as fallback
@@ -3710,7 +3710,7 @@
                     fantasyProsDefensiveRankings = fantasyProsDefensiveRankingsStatic;
                 }
             };
-            
+
             // Initialize rankings when the script loads
             initializeRankingsFromJSON().then(() => {
                 // Trigger a re-render of player list after rankings are loaded
@@ -3718,12 +3718,12 @@
                     window.forcePlayerListUpdate();
                 }
             });
-            
+
             // Get realistic player rankings based on FantasyPros 2025 data
             const getAccuratePlayerRankings = (player) => {
                 const playerName = `${player.first_name} ${player.last_name}`;
                 const key = playerName.toLowerCase();
-                
+
                 // Check offensive rankings first
                 if (fantasyProsOffensiveRankings[key]) {
                     const data = fantasyProsOffensiveRankings[key];
@@ -3740,7 +3740,7 @@
                         source: 'FantasyPros 2025 Rankings'
                     };
                 }
-                
+
                 // Check defensive rankings
                 if (fantasyProsDefensiveRankings[key]) {
                     const data = fantasyProsDefensiveRankings[key];
@@ -3756,7 +3756,7 @@
                         source: 'FantasyPros 2025 IDP Rankings'
                     };
                 }
-                
+
                 // Fallback to position-based estimates for unlisted players
                 return generatePositionBasedRanking(player);
             };
@@ -3765,18 +3765,18 @@
             const isPlayerKeeper = (player, keepersData) => {
                 const playerIds = [player.player_id, player.id, player.playerId].filter(Boolean);
                 const playerFullName = `${player.first_name || ''} ${player.last_name || ''}`.toLowerCase().trim();
-                
+
                 return Object.values(keepersData || {}).some(teamKeepers => {
                     if (Array.isArray(teamKeepers)) {
                         return teamKeepers.some(keeper => {
                             if (!keeper) return false;
-                            
+
                             // Check ID matches
                             const keeperIds = [keeper.playerId, keeper.player_id, keeper.id].filter(Boolean);
                             if (playerIds.some(playerId => keeperIds.includes(playerId))) {
                                 return true;
                             }
-                            
+
                             // Check name matches
                             let keeperName = '';
                             if (keeper.first_name && keeper.last_name) {
@@ -3784,7 +3784,7 @@
                             } else if (keeper.name) {
                                 keeperName = keeper.name.toLowerCase().trim();
                             }
-                            
+
                             return keeperName && keeperName === playerFullName;
                         });
                     }
@@ -3795,25 +3795,25 @@
             // Make the functions globally accessible for React components
             window.getAccuratePlayerRankings = getAccuratePlayerRankings;
             window.isPlayerKeeper = isPlayerKeeper;
-            
+
             // Extract position rank from position string (e.g., "WR1" -> 1)
             const extractPositionRank = (positionString) => {
                 const match = positionString.match(/\d+/);
                 return match ? parseInt(match[0]) : 1;
             };
-            
+
             // Calculate realistic ADP from rank and ECR vs ADP differential
             const calculateADPFromRank = (rank, ecrVsAdp) => {
                 const numericRank = parseFloat(rank) || 0;
                 const adpDiff = parseFloat(ecrVsAdp) || 0;
                 return Math.max(1, numericRank - adpDiff);
             };
-            
+
             // Generate realistic position-based rankings for unlisted players
             const generatePositionBasedRanking = (player) => {
                 const position = player.position;
                 const team = player.team || 'FA';
-                
+
                 // Realistic ranges for each position
                 const positionRanges = {
                     'QB': { min: 40, max: 120, posMin: 9, posMax: 25 },
@@ -3823,13 +3823,13 @@
                     'K': { min: 130, max: 200, posMin: 5, posMax: 20 },
                     'DST': { min: 120, max: 180, posMin: 5, posMax: 20 }
                 };
-                
+
                 const range = positionRanges[position] || positionRanges['WR'];
                 const overall = Math.floor(Math.random() * (range.max - range.min)) + range.min;
                 const positionRank = Math.floor(Math.random() * (range.posMax - range.posMin)) + range.posMin;
                 const tier = Math.ceil(positionRank / 10);
                 const adp = overall + (Math.random() * 20 - 10); // +/- 10 spots variance
-                
+
                 return {
                     overall: overall,
                     position: positionRank,
@@ -3844,7 +3844,7 @@
                 const position = player.position;
                 const team = player.team || 'FA';
                 const playerName = `${player.first_name} ${player.last_name}`;
-                
+
                 // Generate player-specific fantasy analysis links
                 const fantasyAnalysisLinks = [
                     {
@@ -3860,7 +3860,7 @@
                         isLink: true
                     }
                 ];
-                
+
                 // Position-specific analysis
                 const positionAnalysis = {
                     'QB': {
@@ -3871,7 +3871,7 @@
                     },
                     'RB': {
                         title: `${playerName} carry share, red zone touches and weekly outlook`,
-                        source: 'Fantasy Analysis', 
+                        source: 'Fantasy Analysis',
                         url: `https://www.pro-football-reference.com/players/${player.last_name.charAt(0).toLowerCase()}/${player.last_name.toLowerCase()}${player.first_name.substring(0,2).toLowerCase()}01.htm`,
                         isLink: true
                     },
@@ -3900,29 +3900,29 @@
                         isLink: true
                     }
                 };
-                
+
                 // Return mix of fantasy analysis links and position-specific analysis
                 const result = [
                     fantasyAnalysisLinks[0], // FantasyPros
                     positionAnalysis[position] || positionAnalysis['WR'],
                     fantasyAnalysisLinks[2] // Player Profiler for usage
                 ];
-                
+
                 return result.slice(0, 3);
             };
 
             const fetchSleeperData = async (player) => {
                 try {
                     const playerName = `${player.first_name} ${player.last_name}`;
-                    
+
                     // First, get trending players to check if this player has recent activity
                     const trendingResponse = await fetch('https://api.sleeper.app/v1/players/nfl/trending/add?limit=100');
                     const trendingData = await trendingResponse.json();
-                    
+
                     // For demo purposes, we'll use the Sleeper API structure but note that
                     // Sleeper's main API doesn't contain expert notes - it's primarily for
                     // player metadata, trending data, and league/roster management
-                    
+
                     if (trendingData && trendingData.length > 0) {
                         // Check if this player is trending (as a proxy for recent news/interest)
                         const trending = trendingData.find(t => {
@@ -3930,7 +3930,7 @@
                             // This is just a demonstration of the API structure
                             return false; // For now, always return false since we can't match without player ID
                         });
-                        
+
                         if (trending) {
                             return {
                                 ranking: `#${generateRankingByPosition(player.position)}`,
@@ -3945,10 +3945,10 @@
                             };
                         }
                     }
-                    
+
                     // If not trending, return null so we try other sources
                     return null;
-                    
+
                 } catch (error) {
                     throw new Error(`Sleeper API failed: ${error.message}`);
                 }
@@ -3957,15 +3957,15 @@
             const fetchFantasyNerdsData = async (player) => {
                 const corsProxy = 'https://corsproxy.io/?';
                 const apiUrl = `${corsProxy}https://api.fantasynerds.com/v1/nfl/news?apikey=TEST`;
-                
+
                 try {
                     const response = await fetch(apiUrl);
                     const data = await response.text();
-                    
+
                     // Parse HTML or JSON for player-specific news
                     const playerName = `${player.first_name} ${player.last_name}`;
                     const newsData = parseFantasyNerdsNews(data, playerName);
-                    
+
                     if (newsData) {
                         return {
                             ranking: newsData.ranking || `#${generateRankingByPosition(player.position)}`,
@@ -3988,10 +3988,10 @@
                 try {
                     const corsProxy = 'https://corsproxy.io/?';
                     const apiUrl = `${corsProxy}https://api.thescore.com/nfl/players/search?q=${encodeURIComponent(player.first_name + ' ' + player.last_name)}`;
-                    
+
                     const response = await fetch(apiUrl);
                     const data = await response.json();
-                    
+
                     if (data && data.length > 0) {
                         const playerData = data[0];
                         return {
@@ -4014,10 +4014,10 @@
                     const corsProxy = 'https://corsproxy.io/?';
                     const playerName = `${player.first_name} ${player.last_name}`;
                     const apiUrl = `${corsProxy}https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(playerName)}`;
-                    
+
                     const response = await fetch(apiUrl);
                     const data = await response.json();
-                    
+
                     if (data && data.player && data.player.length > 0) {
                         const playerData = data.player.find(p => p.strSport === 'American Football');
                         if (playerData && playerData.strDescriptionEN) {
@@ -4043,10 +4043,10 @@
                     // Simple text search for player mentions in news
                     const lowerPlayerName = playerName.toLowerCase();
                     const lines = htmlData.split('\n');
-                    const relevantLines = lines.filter(line => 
+                    const relevantLines = lines.filter(line =>
                         line.toLowerCase().includes(lowerPlayerName) && line.length > 50
                     );
-                    
+
                     if (relevantLines.length > 0) {
                         return {
                             notes: relevantLines.slice(0, 3),
@@ -4065,7 +4065,7 @@
                 const position = player.position;
                 const baseRanking = generateRankingByPosition(position);
                 const projections = generateProjections(player);
-                
+
                 return {
                     ranking: `#${baseRanking}`,
                     expertNotes: ['No expert analysis currently available. Please check back later for updated insights.'],
@@ -4082,7 +4082,7 @@
             const getFantasyProHalfPPRRanking = (player) => {
                 const position = player.position;
                 const playerName = `${player.first_name} ${player.last_name}`.toLowerCase();
-                
+
                 // Simulate realistic half-PPR rankings based on typical FantasyPros consensus
                 const halfPPRRankings = {
                     'QB': {
@@ -4116,12 +4116,12 @@
                         adpAdjustment: Math.random() * 4 - 2
                     }
                 };
-                
+
                 const positionData = halfPPRRankings[position] || halfPPRRankings['WR'];
                 const baseRank = positionData.baseRank;
                 const tier = positionData.tier;
                 const adp = Math.max(1, baseRank + positionData.adpAdjustment);
-                
+
                 return {
                     ranking: `#${baseRank}`,
                     tier: `Tier ${tier}`,
@@ -4139,7 +4139,7 @@
                     const defensivePositions = ['LB', 'DE', 'DT', 'S', 'CB', 'FS', 'SS', 'OLB', 'MLB', 'NT', 'DL', 'DB'];
                     return defensivePositions.includes(basePos);
                 };
-                
+
                 const baseRanks = {
                     'QB': Math.floor(Math.random() * 20) + 1,
                     'RB': Math.floor(Math.random() * 40) + 1,
@@ -4148,12 +4148,12 @@
                     'K': Math.floor(Math.random() * 20) + 1,
                     'DST': Math.floor(Math.random() * 20) + 1
                 };
-                
+
                 // Handle defensive positions
                 if (isDefensivePlayer(position)) {
                     return Math.floor(Math.random() * 50) + 100; // IDP players ranked 100+
                 }
-                
+
                 return baseRanks[position] || Math.floor(Math.random() * 50) + 1;
             };
 
@@ -4161,18 +4161,18 @@
             // Generate projections based on position
             const generateProjections = (player) => {
                 const position = player.position;
-                
+
                 // Debug logging to help identify position issues
                 console.log(`🏈 Generating projections for ${player.first_name} ${player.last_name}, Position: "${position}"`);
-                
-                // Check if this is an individual defensive player (IDP) 
+
+                // Check if this is an individual defensive player (IDP)
                 const isDefensivePlayer = (pos) => {
                     // Extract base position (remove numbers)
                     const basePos = pos.replace(/\d+/g, '');
                     const defensivePositions = ['LB', 'DE', 'DT', 'S', 'CB', 'FS', 'SS', 'OLB', 'MLB', 'NT', 'DL', 'DB', 'DST', 'DEF'];
                     return defensivePositions.includes(basePos);
                 };
-                
+
                 const projections = {
                     'QB': {
                         points: Math.floor(Math.random() * 100) + 200,
@@ -4218,19 +4218,19 @@
                         safeties: Math.floor(Math.random() * 2) + 1
                     }
                 };
-                
+
                 // Handle individual defensive players (IDP)
                 if (isDefensivePlayer(position)) {
                     console.log('✅ Using IDP projections for:', player.first_name, player.last_name, `Position: ${position}`);
                     return projections['IDP'];
                 }
-                
+
                 // Handle team defense positions
                 if (position === 'DST' || position === 'DEF' || position === 'Defense' || position === 'D/ST') {
                     console.log('✅ Using team defense projections for:', player.first_name, player.last_name);
                     return projections['DST'];
                 }
-                
+
                 const result = projections[position] || projections['WR'];
                 console.log(`📊 Using ${position} projections:`, Object.keys(result));
                 return result;
@@ -4244,33 +4244,33 @@
 
             const handleDraftPlayer = () => {
                 console.log('⚡ Draft button clicked for:', `${player.first_name} ${player.last_name}`);
-                
+
                 // Check if player is a keeper
                 if (isKeeper) {
                     console.error('❌ Cannot draft: Player is a keeper');
                     alert('This player is a keeper and cannot be drafted.');
                     return;
                 }
-                
+
                 // Validate draft conditions
                 if (!currentPick) {
                     console.error('❌ Cannot draft: No active pick');
                     alert('No active pick available. Wait for your turn.');
                     return;
                 }
-                
+
                 if (isDrafted) {
                     console.error('❌ Cannot draft: Player already drafted');
                     alert('This player has already been drafted.');
                     return;
                 }
-                
+
                 if (isViewOnly) {
                     console.error('❌ Cannot draft: View-only mode');
                     alert('You are in view-only mode and cannot make picks.');
                     return;
                 }
-                
+
                 // Execute the draft
                 try {
                     console.log('🎯 Making pick:', {
@@ -4278,13 +4278,13 @@
                         teamId: currentPick.teamId,
                         playerName: `${player.first_name} ${player.last_name}`
                     });
-                    
+
                     makePick(player.player_id, currentPick.teamId, false);
                     console.log('✅ Draft successful!');
-                    
+
                     // Close modal after successful draft
                     setTimeout(handleClose, 100);
-                    
+
                 } catch (error) {
                     console.error('❌ Draft failed:', error);
                     alert('Failed to draft player. Please try again.');
@@ -4305,7 +4305,7 @@
                                     alt={fullName}
                                     className="w-16 h-16 rounded-full object-cover border-2 border-purple-500"
                                     onError={(e) => {
-                                        e.target.src = 'https://via.placeholder.com/64x64/6366f1/ffffff?text=' + 
+                                        e.target.src = 'https://via.placeholder.com/64x64/6366f1/ffffff?text=' +
                                                        (player.first_name?.[0] || '') + (player.last_name?.[0] || '');
                                     }}
                                 />
@@ -4420,9 +4420,9 @@
                                                         ) : (
                                                             <div className="space-y-1">
                                                                 {item.isLink ? (
-                                                                    <a 
-                                                                        href={item.url} 
-                                                                        target="_blank" 
+                                                                    <a
+                                                                        href={item.url}
+                                                                        target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         className="text-blue-400 hover:text-blue-300 text-sm leading-relaxed underline hover:no-underline transition-colors"
                                                                     >
@@ -4806,8 +4806,8 @@
                             {safeTeams.slice(0, safeDraftSettings.teamCount).map(team => {
                                 const isHighlighted = highlightedTeam === team.id;
                                 return (
-                                <div 
-                                    key={team.id} 
+                                <div
+                                    key={team.id}
                                     className={`team-column transition-all duration-300 ${isHighlighted ? 'ring-2 ring-yellow-400 ring-opacity-60 bg-yellow-400 bg-opacity-5' : ''}`}
                                 >
                                     <div
@@ -4820,7 +4820,6 @@
                                         title={`Click to highlight ${team.name}'s column`}
                                     >
                                         <div className="text-white font-bold text-sm sm:text-base">{team.name}</div>
-                                        <div className="text-slate-300 text-xs mt-1 hidden sm:block">{team.owner}</div>
                                     </div>
 
                                     <div className="space-y-1 sm:space-y-2">
@@ -4854,7 +4853,7 @@
                                                     </div>
 
                                                     {pick && playerInfo ? (
-                                                        <div 
+                                                        <div
                                                             className={`fade-in cursor-pointer hover:bg-slate-700/30 rounded p-1 transition-colors ${pick.pending ? 'opacity-60' : ''}`}
                                                             onClick={() => onPlayerInfoClick && onPlayerInfoClick({
                                                                 ...playersData[playerInfo.id],
@@ -4937,16 +4936,16 @@
 
             // Add state to force re-render when rankings are loaded
             const [rankingsLoaded, setRankingsLoaded] = React.useState(false);
-            
+
             // Expose update function globally and trigger initial update
             React.useEffect(() => {
                 window.forcePlayerListUpdate = () => setRankingsLoaded(prev => !prev);
-                
+
                 // Trigger an immediate update to ensure rankings are applied from start
                 setTimeout(() => {
                     setRankingsLoaded(prev => !prev);
                 }, 100);
-                
+
                 return () => { window.forcePlayerListUpdate = null; };
             }, []);
 
@@ -4978,7 +4977,7 @@
                 const playersArray = Object.values(playersData || {});
                 console.log('PlayerList - playersArray length:', playersArray.length);
                 const draftedPlayerIds = new Set(picks.map(pick => pick.playerId));
-                
+
                 // Get all keeper player IDs and names to exclude from available players
                 const keeperPlayerIds = new Set();
                 const keeperPlayerNames = new Set();
@@ -4995,7 +4994,7 @@
                                     keeperPlayerIds.add(validId);
                                     console.log('Added keeper ID to exclusion list:', validId);
                                 }
-                                
+
                                 // Also try name-based matching as fallback
                                 if (keeper.first_name && keeper.last_name) {
                                     const fullName = `${keeper.first_name} ${keeper.last_name}`.toLowerCase();
@@ -5018,21 +5017,21 @@
                 const result = playersArray
                     .filter(player => {
                         if (!player) return false;
-                        
+
                         // Filter out offensive line players
                         if (offensiveLinePositions.includes(player.position)) {
                             return false;
                         }
-                        
+
                         // Filter out keepers - they should not be available to draft
                         const playerIds = [player.player_id, player.id, player.playerId].filter(Boolean);
                         const playerFullName = `${player.first_name || ''} ${player.last_name || ''}`.toLowerCase().trim();
-                        
+
                         if (playerIds.some(id => keeperPlayerIds.has(id)) || keeperPlayerNames.has(playerFullName)) {
                             console.log('Filtering out keeper:', player.first_name, player.last_name, 'IDs:', playerIds, 'Name:', playerFullName);
                             return false;
                         }
-                        
+
                         // Remove active check since optimized data doesn't include this field
 
                         if (showAvailableOnly && draftedPlayerIds.has(player.player_id)) {
@@ -5066,19 +5065,19 @@
                         if (a.position !== b.position) {
                             return (a.position || '').localeCompare(b.position || '');
                         }
-                        
+
                         // Use actual fantasy rankings for sorting with fallback
                         let aRank = 999, bRank = 999;
-                        
+
                         try {
                             if (window.getAccuratePlayerRankings) {
                                 const aRanking = window.getAccuratePlayerRankings(a);
                                 const bRanking = window.getAccuratePlayerRankings(b);
-                                
+
                                 // Use overall rank if available, otherwise use positional fallback
                                 aRank = (aRanking.overall && aRanking.overall < 500) ? aRanking.overall : getPositionBasedRank(a);
                                 bRank = (bRanking.overall && bRanking.overall < 500) ? bRanking.overall : getPositionBasedRank(b);
-                                
+
                                 // Debug ranking system
                                 if (Math.random() < 0.005) { // Log 0.5% of comparisons
                                     console.log(`Ranking debug: ${a.first_name} ${a.last_name} (${aRank}) vs ${b.first_name} ${b.last_name} (${bRank})`);
@@ -5092,12 +5091,12 @@
                             aRank = getPositionBasedRank(a);
                             bRank = getPositionBasedRank(b);
                         }
-                        
+
                         // Simple position-based ranking fallback
                         function getPositionBasedRank(player) {
                             const posBaseline = {
-                                'QB': 100, 'RB': 200, 'WR': 300, 'TE': 400, 
-                                'K': 500, 'DEF': 600, 'DT': 700, 'DE': 800, 
+                                'QB': 100, 'RB': 200, 'WR': 300, 'TE': 400,
+                                'K': 500, 'DEF': 600, 'DT': 700, 'DE': 800,
                                 'LB': 900, 'CB': 1000, 'S': 1100
                             };
                             const baseline = posBaseline[player.position] || 999;
@@ -5108,12 +5107,12 @@
                             }, 0);
                             return baseline + Math.abs(nameHash % 50);
                         }
-                        
+
                         // Sort by ranking (lower rank number = higher priority)
                         if (aRank !== bRank) {
                             return aRank - bRank;
                         }
-                        
+
                         // Fallback to alphabetical if ranks are the same
                         const aName = `${a.first_name || ''} ${a.last_name || ''}`;
                         const bName = `${b.first_name || ''} ${b.last_name || ''}`;
@@ -5157,7 +5156,7 @@
                     console.log('Cannot select keeper player:', player.first_name, player.last_name);
                     return;
                 }
-                
+
                 if (currentPick) {
                     // Check if this player is the designated keeper for this pick
                     const keeperKey = `${currentPick.teamId}-${currentPick.round}`;
@@ -5308,7 +5307,7 @@
                                                     ${getPositionCardBg(player.position)}
                                                     ${isDrafted
                                                         ? 'opacity-50 drafted border-slate-700 cursor-not-allowed'
-                                                        : isKeeper 
+                                                        : isKeeper
                                                         ? 'opacity-50 border-yellow-600 cursor-not-allowed'
                                                         : 'hover:border-purple-500 cursor-pointer'
                                                     }
@@ -5460,7 +5459,7 @@
                                                     ${getPositionCardBg(player.position)}
                                                     ${isDrafted
                                                         ? 'opacity-50 drafted border-slate-700 cursor-not-allowed'
-                                                        : isKeeper 
+                                                        : isKeeper
                                                         ? 'opacity-50 border-yellow-600 cursor-not-allowed'
                                                         : 'hover:border-purple-500 cursor-pointer'
                                                     }
@@ -5557,7 +5556,7 @@
                     <div className={`glass-dark rounded-xl p-6 max-w-md w-full shadow-2xl ${closing ? 'modal-exit' : 'modal-enter'}`}>
                         <h3 className="text-xl font-bold text-white mb-4">{title}</h3>
                         <p className="text-slate-300 mb-6">{message}</p>
-                        
+
                         <div className="flex space-x-3">
                             <button
                                 onClick={handleClose}
@@ -5568,8 +5567,8 @@
                             <button
                                 onClick={handleConfirm}
                                 className={`flex-1 px-4 py-2 rounded-lg text-white transition-all ${
-                                    type === 'danger' 
-                                        ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800' 
+                                    type === 'danger'
+                                        ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800'
                                         : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
                                 }`}
                             >
@@ -6129,8 +6128,8 @@
                             <div className="glass-dark rounded-xl p-6 max-w-md mx-4">
                                 <h2 className="text-xl font-bold text-red-400 mb-4">Something went wrong</h2>
                                 <p className="text-slate-300 mb-4">The app encountered an error. Please refresh the page to try again.</p>
-                                <button 
-                                    onClick={() => window.location.reload()} 
+                                <button
+                                    onClick={() => window.location.reload()}
                                     className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white"
                                 >
                                     Refresh Page
@@ -6181,7 +6180,7 @@
             useEffect(() => {
                 if (recentPick) {
                     const pickId = `${recentPick.playerId}-${recentPick.teamId}-${recentPick.round}`;
-                    
+
                     if (!shownPickIds.has(pickId)) {
                         const modeLabel = isViewOnly ? '[VIEW-ONLY]' : '[INTERACTIVE]';
                         console.log(`📱 ${modeLabel} Showing modal for new pick:`, pickId);
@@ -6241,7 +6240,7 @@
                             </div>
                         </div>
                     )}
-                    
+
                     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
                         {/* Header */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-8 gap-4">
@@ -6272,16 +6271,16 @@
 
                         {/* Main Content */}
                         <div className="space-y-4 sm:space-y-8">
-                            <DraftBoard 
-                                highlightedTeam={highlightedTeam} 
+                            <DraftBoard
+                                highlightedTeam={highlightedTeam}
                                 onTeamClick={(teamId) => setHighlightedTeam(teamId === highlightedTeam ? null : teamId)}
                                 onPlayerInfoClick={handlePlayerInfoClick}
                             />
                         </div>
 
                         {/* Player Panel - Managed by PlayerList component */}
-                        <PlayerList 
-                            onPlayerInfoClick={handlePlayerInfoClick} 
+                        <PlayerList
+                            onPlayerInfoClick={handlePlayerInfoClick}
                             isViewOnly={isViewOnly}
                         />
 
