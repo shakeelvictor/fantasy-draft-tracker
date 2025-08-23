@@ -2560,8 +2560,11 @@
             }
 
             async saveNoteToDatabase(pickKey, noteText) {
+                // Always save to localStorage as fallback/immediate storage
+                this.saveNoteToLocalStorage(pickKey, noteText);
+
                 try {
-                    console.log('📝 Saving note to dedicated database table:', { pickKey, noteText });
+                    console.log('📝 Attempting to save note to database:', { pickKey, noteText });
                     
                     const response = await fetch('/api/notes', {
                         method: 'POST',
@@ -2578,18 +2581,19 @@
                     if (response.ok) {
                         console.log('✅ Note saved to database successfully');
                     } else {
-                        console.error('❌ Failed to save note to database:', response.status);
-                        showToast('Failed to save note to database', 'error');
+                        console.warn('⚠️ Database endpoint not available, using localStorage fallback:', response.status);
                     }
                 } catch (error) {
-                    console.error('❌ Error saving note to database:', error);
-                    showToast('Error saving note', 'error');
+                    console.warn('⚠️ Database not available, using localStorage fallback:', error.message);
                 }
             }
 
             async deleteNoteFromDatabase(pickKey) {
+                // Always delete from localStorage as fallback/immediate storage
+                this.deleteNoteFromLocalStorage(pickKey);
+
                 try {
-                    console.log('🗑️ Deleting note from database:', pickKey);
+                    console.log('🗑️ Attempting to delete note from database:', pickKey);
                     
                     const response = await fetch(`/api/notes/${encodeURIComponent(pickKey)}`, {
                         method: 'DELETE',
@@ -2601,16 +2605,16 @@
                     if (response.ok) {
                         console.log('✅ Note deleted from database successfully');
                     } else {
-                        console.error('❌ Failed to delete note from database:', response.status);
+                        console.warn('⚠️ Database endpoint not available, using localStorage fallback:', response.status);
                     }
                 } catch (error) {
-                    console.error('❌ Error deleting note from database:', error);
+                    console.warn('⚠️ Database not available, using localStorage fallback:', error.message);
                 }
             }
 
             async loadNotesFromDatabase() {
                 try {
-                    console.log('📖 Loading notes from dedicated database table...');
+                    console.log('📖 Attempting to load notes from database...');
                     
                     const response = await fetch('/api/notes', {
                         method: 'GET',
@@ -2630,11 +2634,48 @@
                         
                         return notes;
                     } else {
-                        console.error('❌ Failed to load notes from database:', response.status);
-                        return {};
+                        console.warn('⚠️ Database endpoint not available, loading from localStorage fallback');
+                        return this.loadNotesFromLocalStorage();
                     }
                 } catch (error) {
-                    console.error('❌ Error loading notes from database:', error);
+                    console.warn('⚠️ Database not available, loading from localStorage fallback:', error.message);
+                    return this.loadNotesFromLocalStorage();
+                }
+            }
+
+            saveNoteToLocalStorage(pickKey, noteText) {
+                try {
+                    const existingNotes = JSON.parse(localStorage.getItem('fantasy-pick-notes') || '{}');
+                    existingNotes[pickKey] = noteText;
+                    localStorage.setItem('fantasy-pick-notes', JSON.stringify(existingNotes));
+                    console.log('💾 Note saved to localStorage:', { pickKey, noteText });
+                } catch (error) {
+                    console.error('❌ Error saving note to localStorage:', error);
+                }
+            }
+
+            deleteNoteFromLocalStorage(pickKey) {
+                try {
+                    const existingNotes = JSON.parse(localStorage.getItem('fantasy-pick-notes') || '{}');
+                    delete existingNotes[pickKey];
+                    localStorage.setItem('fantasy-pick-notes', JSON.stringify(existingNotes));
+                    console.log('🗑️ Note deleted from localStorage:', pickKey);
+                } catch (error) {
+                    console.error('❌ Error deleting note from localStorage:', error);
+                }
+            }
+
+            loadNotesFromLocalStorage() {
+                try {
+                    const notes = JSON.parse(localStorage.getItem('fantasy-pick-notes') || '{}');
+                    console.log('📖 Loaded notes from localStorage:', notes);
+                    
+                    // Update state with loaded notes
+                    this.setState({ pickNotes: notes }, false);
+                    
+                    return notes;
+                } catch (error) {
+                    console.error('❌ Error loading notes from localStorage:', error);
                     return {};
                 }
             }
