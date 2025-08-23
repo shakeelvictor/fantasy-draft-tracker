@@ -2571,6 +2571,41 @@
                 }
             }
 
+            addPlayerNote(playerId, note) {
+                if (this.isViewOnly) {
+                    showToast('View-only mode - cannot add notes', 'error');
+                    return;
+                }
+
+                const { pickNotes } = this.state;
+                const playerKey = `player-${playerId}`;
+                const updatedNotes = { ...pickNotes };
+
+                const isDeleting = !note || note.trim() === '';
+
+                if (isDeleting) {
+                    // Remove note if empty
+                    delete updatedNotes[playerKey];
+                    showToast('Player note removed', 'success');
+                } else {
+                    // Add or update note
+                    updatedNotes[playerKey] = note.trim();
+                    showToast('Player note saved', 'success');
+                }
+
+                // Update local state immediately for UI responsiveness
+                this.setState({
+                    pickNotes: updatedNotes
+                }, false); // Don't broadcast - we'll save directly to database
+
+                // Save note to dedicated database table
+                if (isDeleting) {
+                    this.deleteNoteFromDatabase(playerKey);
+                } else {
+                    this.saveNoteToDatabase(playerKey, note.trim());
+                }
+            }
+
             async saveNoteToDatabase(pickKey, noteText) {
                 try {
                     console.log('📝 Attempting to save note to database:', { pickKey, noteText });
@@ -3340,6 +3375,7 @@
                 resetDraft: () => draftStore.resetDraft(),
                 deleteArchivedDraft: (draftId) => draftStore.deleteArchivedDraft(draftId),
                 addPickNote: (round, teamId, note) => draftStore.addPickNote(round, teamId, note),
+                addPlayerNote: (playerId, note) => draftStore.addPlayerNote(playerId, note),
                 tradePlayer: (playerId, fromTeamId, toTeamId) => draftStore.tradePlayer(playerId, fromTeamId, toTeamId)
             };
         }
@@ -3626,6 +3662,7 @@
                 tradePlayer,
                 pickNotes,
                 addPickNote,
+                addPlayerNote,
                 isViewOnly
             } = useDraftStore();
 
@@ -3637,9 +3674,13 @@
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
             const draftedPick = picks.find(pick => pick.playerId === player.player_id);
             
-            // Get existing note for this pick
+            // Get existing note - check both pick-based (for drafted) and player-based (for all players)
             const pickKey = draftedPick ? `${draftedPick.round}-${draftedPick.teamId}` : null;
-            const existingNote = pickKey ? pickNotes[pickKey] : null;
+            const pickBasedNote = pickKey ? pickNotes[pickKey] : null;
+            
+            // For now, use pick-based notes if available, otherwise allow player-based notes
+            // TODO: We'll need to add player-based notes to the state and database
+            const existingNote = pickBasedNote;
             
             // Debug logging for notes section visibility
             console.log('🔍 Player Modal Notes Debug:', {
@@ -3650,7 +3691,7 @@
                 actuallyViewOnly,
                 pickKey,
                 existingNote,
-                shouldShowNotes: isDrafted && !actuallyViewOnly
+                shouldShowNotes: !actuallyViewOnly
             });
             
             // Initialize note text with existing note
@@ -4957,70 +4998,81 @@
                                     <div className="text-center">
                                         <h3 className="text-lg font-bold text-slate-400 mb-1">Already Drafted</h3>
                                         <p className="text-slate-400 text-sm">This player has been selected by another team</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Notes Section - Available for all players in interactive mode */}
+                            {!actuallyViewOnly && (
+                                <div className="glass p-4 rounded-lg border border-slate-500/50 bg-slate-500/10 mt-4">
+                                    <div className="text-center">
+                                        <h3 className="text-lg font-bold text-slate-400 mb-3">Notes</h3>
                                         
-                                        
-                                        {/* Notes Section */}
-                                        {!actuallyViewOnly && (
-                                            <div className="mt-4 border-t border-slate-600 pt-4">
-                                            {!showNoteInput ? (
-                                                <div className="text-center">
+                                        {!showNoteInput ? (
+                                            <div className="text-center">
+                                                {existingNote && (
+                                                    <div className="mb-3 p-3 bg-blue-900/20 rounded text-blue-300 text-sm border border-blue-700/50">
+                                                        📝 {existingNote}
+                                                    </div>
+                                                )}
+                                                <button
+                                                    onClick={() => setShowNoteInput(true)}
+                                                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium rounded-lg transition-all transform hover:scale-105 shadow-lg text-sm"
+                                                >
+                                                    {existingNote ? 'Edit Note' : 'Add Note'}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <textarea
+                                                    value={noteText}
+                                                    onChange={(e) => setNoteText(e.target.value)}
+                                                    placeholder={isDrafted ? "e.g., 'Belongs to Team B', 'Traded pick', etc." : "e.g., 'Target player', 'Sleeper pick', 'Avoid - injury risk', etc."}
+                                                    className="w-full p-3 glass rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none text-sm"
+                                                    rows={2}
+                                                    maxLength={100}
+                                                />
+                                                <div className="flex space-x-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowNoteInput(false);
+                                                            setNoteText(existingNote || '');
+                                                        }}
+                                                        className="flex-1 px-3 py-2 glass hover:bg-slate-600 text-white rounded-lg transition-all text-sm"
+                                                    >
+                                                        Cancel
+                                                    </button>
                                                     {existingNote && (
-                                                        <div className="mb-2 p-2 bg-blue-900/20 rounded text-blue-300 text-sm">
-                                                            📝 {existingNote}
-                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (isDrafted && pickKey) {
+                                                                    addPickNote(draftedPick.round, draftedPick.teamId, '');
+                                                                } else if (!isDrafted) {
+                                                                    addPlayerNote(player.player_id, '');
+                                                                }
+                                                                setNoteText('');
+                                                                setShowNoteInput(false);
+                                                            }}
+                                                            className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all text-sm"
+                                                        >
+                                                            Clear
+                                                        </button>
                                                     )}
                                                     <button
-                                                        onClick={() => setShowNoteInput(true)}
-                                                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium rounded-lg transition-all transform hover:scale-105 shadow-lg text-sm"
+                                                        onClick={() => {
+                                                            if (isDrafted && pickKey) {
+                                                                addPickNote(draftedPick.round, draftedPick.teamId, noteText);
+                                                            } else if (!isDrafted) {
+                                                                addPlayerNote(player.player_id, noteText);
+                                                            }
+                                                            setShowNoteInput(false);
+                                                        }}
+                                                        className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg transition-all text-sm"
                                                     >
-                                                        {existingNote ? 'Edit Note' : 'Add Note'}
+                                                        Save
                                                     </button>
                                                 </div>
-                                            ) : (
-                                                <div className="space-y-3">
-                                                    <textarea
-                                                        value={noteText}
-                                                        onChange={(e) => setNoteText(e.target.value)}
-                                                        placeholder="e.g., 'Belongs to Team B', 'Traded pick', etc."
-                                                        className="w-full p-3 glass rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none text-sm"
-                                                        rows={2}
-                                                        maxLength={100}
-                                                    />
-                                                    <div className="flex space-x-2">
-                                                        <button
-                                                            onClick={() => {
-                                                                setShowNoteInput(false);
-                                                                setNoteText(existingNote || '');
-                                                            }}
-                                                            className="flex-1 px-3 py-2 glass hover:bg-slate-600 text-white rounded-lg transition-all text-sm"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        {existingNote && (
-                                                            <button
-                                                                onClick={() => {
-                                                                    if (pickKey) addPickNote(draftedPick.round, draftedPick.teamId, '');
-                                                                    setNoteText('');
-                                                                    setShowNoteInput(false);
-                                                                }}
-                                                                className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all text-sm"
-                                                            >
-                                                                Clear
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() => {
-                                                                if (pickKey) addPickNote(draftedPick.round, draftedPick.teamId, noteText);
-                                                                setShowNoteInput(false);
-                                                            }}
-                                                            className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg transition-all text-sm"
-                                                        >
-                                                            Save
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
