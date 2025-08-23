@@ -1140,6 +1140,8 @@
                     },
                     keepers: {},
                     trades: [],
+                    pickTrades: [], // Track pick transfers/trades
+                    playerTrades: [], // Track post-draft player trades
                     history: [],
                     currentHistoryIndex: -1,
                     playersData: {},
@@ -2510,7 +2512,7 @@
                     return;
                 }
 
-                const { picks, teams, playersData } = this.state;
+                const { picks, teams, playersData, pickTrades } = this.state;
                 
                 // Find the target team
                 const targetTeam = teams.find(team => team.id === toTeamId);
@@ -2525,30 +2527,97 @@
                     pick.teamId === fromTeamId && pick.round === round
                 );
 
+                // Record the pick transfer
+                const pickTradeRecord = {
+                    id: `trade-${Date.now()}`,
+                    fromTeamId,
+                    toTeamId,
+                    round,
+                    timestamp: Date.now(),
+                    type: 'pick'
+                };
+
                 if (existingPickIndex !== -1) {
                     // Transfer existing pick to new team
                     const existingPick = picks[existingPickIndex];
                     const updatedPicks = [...picks];
                     updatedPicks[existingPickIndex] = {
                         ...existingPick,
-                        teamId: toTeamId
+                        teamId: toTeamId,
+                        isTraded: true,
+                        originalTeamId: fromTeamId // Keep track of original owner
                     };
 
+                    pickTradeRecord.playerId = existingPick.playerId;
+
                     this.setState({
-                        picks: updatedPicks
+                        picks: updatedPicks,
+                        pickTrades: [...pickTrades, pickTradeRecord]
                     }, true);
 
                     const player = playersData[existingPick.playerId];
                     const playerName = player ? `${player.first_name || ''} ${player.last_name || ''}`.trim() : 'Drafted player';
                     showToast(`${playerName} transferred to ${targetTeam.name}`, 'success');
                 } else {
-                    // For empty picks, we need to handle future draft logic
-                    // This is a conceptual transfer - when this pick comes up in the draft order,
-                    // it will go to the new team instead
+                    // For empty picks, record the future pick transfer
+                    this.setState({
+                        pickTrades: [...pickTrades, pickTradeRecord]
+                    }, true);
                     
-                    showToast(`Round ${round} pick slot transferred to ${targetTeam.name}`, 'info');
-                    showToast(`Note: This affects future draft order when this pick becomes active`, 'info');
+                    showToast(`Round ${round} pick transferred to ${targetTeam.name}`, 'success');
                 }
+            }
+
+            tradePlayer(playerId, fromTeamId, toTeamId) {
+                if (this.isViewOnly) {
+                    showToast('View-only mode - cannot trade players', 'error');
+                    return;
+                }
+
+                const { picks, teams, playersData, playerTrades } = this.state;
+                
+                // Find the target team
+                const targetTeam = teams.find(team => team.id === toTeamId);
+                const fromTeam = teams.find(team => team.id === fromTeamId);
+                if (!targetTeam || !fromTeam) {
+                    showToast('Invalid team selected', 'error');
+                    return;
+                }
+
+                // Find the pick with this player
+                const existingPickIndex = picks.findIndex(pick => pick.playerId === playerId);
+                if (existingPickIndex === -1) {
+                    showToast('Player not found in draft', 'error');
+                    return;
+                }
+
+                // Create trade record
+                const tradeRecord = {
+                    id: `trade-${Date.now()}`,
+                    playerId,
+                    fromTeamId,
+                    toTeamId,
+                    timestamp: Date.now(),
+                    type: 'player'
+                };
+
+                // Update the pick to reflect the trade
+                const updatedPicks = [...picks];
+                updatedPicks[existingPickIndex] = {
+                    ...updatedPicks[existingPickIndex],
+                    teamId: toTeamId,
+                    isTraded: true,
+                    originalTeamId: updatedPicks[existingPickIndex].originalTeamId || fromTeamId
+                };
+
+                this.setState({
+                    picks: updatedPicks,
+                    playerTrades: [...playerTrades, tradeRecord]
+                }, true);
+
+                const player = playersData[playerId];
+                const playerName = player ? `${player.first_name || ''} ${player.last_name || ''}`.trim() : 'Player';
+                showToast(`${playerName} traded to ${targetTeam.name}`, 'success');
             }
 
             // Helper method to find picks that should exist after a given history state
@@ -3052,7 +3121,8 @@
                 setViewOnlyMode: (isViewOnly) => draftStore.setViewOnlyMode(isViewOnly),
                 resetDraft: () => draftStore.resetDraft(),
                 deleteArchivedDraft: (draftId) => draftStore.deleteArchivedDraft(draftId),
-                transferPick: (fromTeamId, round, toTeamId) => draftStore.transferPick(fromTeamId, round, toTeamId)
+                transferPick: (fromTeamId, round, toTeamId) => draftStore.transferPick(fromTeamId, round, toTeamId),
+                tradePlayer: (playerId, fromTeamId, toTeamId) => draftStore.tradePlayer(playerId, fromTeamId, toTeamId)
             };
         }
 
@@ -3321,6 +3391,7 @@
             const [newsLoading, setNewsLoading] = useState(false);
             const [error, setError] = useState(null);
             const [closing, setClosing] = useState(false);
+            const [showTradeOptions, setShowTradeOptions] = useState(false);
 
             // Simple cache for player data to speed up repeated views
             const playerDataCache = React.useRef(new Map());
@@ -3330,7 +3401,9 @@
                 currentPick,
                 picks,
                 playersData,
-                keepers
+                keepers,
+                teams,
+                tradePlayer
             } = useDraftStore();
 
             // Check if we're in view-only mode
@@ -4636,6 +4709,60 @@
                                     <div className="text-center">
                                         <h3 className="text-lg font-bold text-slate-400 mb-1">Already Drafted</h3>
                                         <p className="text-slate-400 text-sm">This player has been selected by another team</p>
+                                        
+                                        {!isViewOnly && (
+                                            <div className="mt-3">
+                                                {!showTradeOptions ? (
+                                                    <button
+                                                        onClick={() => setShowTradeOptions(true)}
+                                                        className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-medium rounded-lg transition-all transform hover:scale-105 shadow-lg text-sm"
+                                                    >
+                                                        Trade Player
+                                                    </button>
+                                                ) : (
+                                                    <div className="mt-4 space-y-2">
+                                                        <p className="text-white text-sm font-medium">Trade to which team?</p>
+                                                        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                                                            {teams.filter(team => {
+                                                                // Find which team currently owns this player
+                                                                const currentOwner = picks.find(pick => pick.playerId === player.player_id);
+                                                                return currentOwner && team.id !== currentOwner.teamId;
+                                                            }).map(team => (
+                                                                <button
+                                                                    key={team.id}
+                                                                    onClick={() => {
+                                                                        const currentOwner = picks.find(pick => pick.playerId === player.player_id);
+                                                                        if (currentOwner) {
+                                                                            tradePlayer(player.player_id, currentOwner.teamId, team.id);
+                                                                            handleClose();
+                                                                        }
+                                                                    }}
+                                                                    className="p-2 text-xs glass rounded-lg hover:bg-slate-600/50 transition-all border"
+                                                                    style={{
+                                                                        borderColor: `${team.color}60`,
+                                                                        background: `linear-gradient(135deg, ${team.color}20, ${team.color}10)`
+                                                                    }}
+                                                                >
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <div
+                                                                            className="w-3 h-3 rounded-full"
+                                                                            style={{ backgroundColor: team.color }}
+                                                                        />
+                                                                        <span className="text-white font-medium">{team.name}</span>
+                                                                    </div>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setShowTradeOptions(false)}
+                                                            className="px-3 py-1 text-slate-400 hover:text-white transition-colors text-sm"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -4771,7 +4898,8 @@
                 playersData,
                 currentPick,
                 showPlayerPanel,
-                keepers
+                keepers,
+                pickTrades
             } = useDraftStore();
 
             // Debug: Log keepers in DraftBoard component
@@ -4804,6 +4932,21 @@
                 );
 
                 if (pick) return pick;
+
+                // Check if this pick slot has been transferred to this team
+                const transferredHere = pickTrades?.find(trade => 
+                    trade.toTeamId === teamId && trade.round === round && !trade.playerId
+                );
+                
+                // Check if this team's pick has been transferred away
+                const transferredAway = pickTrades?.find(trade => 
+                    trade.fromTeamId === teamId && trade.round === round && !trade.playerId
+                );
+                
+                // If this team's pick was transferred away, don't show it here
+                if (transferredAway) {
+                    return null;
+                }
 
                 // Then check if there's a keeper designated for this slot
                 const keeperKey = `${teamId}-${round}`;
@@ -4921,6 +5064,13 @@
                                                 currentPick.teamId === team.id &&
                                                 currentPick.round === round;
 
+                                            // Check if this is a transferred pick slot (empty slot transferred to this team)
+                                            const transferredToHere = pickTrades?.find(trade => 
+                                                trade.toTeamId === team.id && trade.round === round && !trade.playerId
+                                            );
+                                            const originalOwner = transferredToHere ? 
+                                                safeTeams.find(t => t.id === transferredToHere.fromTeamId) : null;
+
                                             return (
                                                 <div
                                                     key={round}
@@ -4930,6 +5080,7 @@
                                                         ${pick && !pick.pending ? 'new-pick' : 'bg-slate-900/30'}
                                                         ${pick?.pending ? 'bg-yellow-900/30 border border-yellow-600/50' : ''}
                                                         ${isCurrentPick ? 'on-clock' : ''}
+                                                        ${transferredToHere ? 'bg-blue-900/20 border border-blue-500/50' : ''}
                                                         flex flex-col justify-center relative cursor-pointer
                                                         hover:ring-2 hover:ring-yellow-400/50 transition-all duration-200
                                                     `}
@@ -4940,8 +5091,10 @@
                                                         }
                                                     }}
                                                     title={pick && playerInfo ? 
-                                                        `Click to transfer ${playerInfo.name} to another team` : 
-                                                        `Click to assign this Round ${round} pick to another team`
+                                                        `${playerInfo.name}${pick.isTraded ? ` (Originally: ${safeTeams.find(t => t.id === pick.originalTeamId)?.name || 'Unknown'})` : ''} - Click to transfer` : 
+                                                        transferredToHere ? 
+                                                            `Round ${round} pick (Originally: ${originalOwner?.name || 'Unknown'}) - Click to transfer` :
+                                                            `Click to assign this Round ${round} pick to another team`
                                                     }
                                                 >
                                                     <div className="text-slate-400 text-[9px] sm:text-[10px] mb-1 font-semibold flex items-center justify-between">
@@ -4950,6 +5103,16 @@
                                                             {pick?.isKeeper && (
                                                                 <span className="keeper-badge px-1 py-0.5 rounded text-[8px] sm:text-[9px] text-black font-bold">
                                                                     K
+                                                                </span>
+                                                            )}
+                                                            {pick?.isTraded && (
+                                                                <span className="bg-orange-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title="Traded player">
+                                                                    T
+                                                                </span>
+                                                            )}
+                                                            {transferredToHere && !pick && (
+                                                                <span className="bg-blue-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Pick transferred from ${originalOwner?.name}`}>
+                                                                    ↔
                                                                 </span>
                                                             )}
                                                             <span className="text-yellow-400/60 hover:text-yellow-400 transition-colors text-[8px] sm:text-[9px]" title="Click to transfer">
@@ -5002,6 +5165,11 @@
                                                             {isCurrentPick ? (
                                                                 <div className="animate-pulse font-semibold text-blue-400 text-[10px] sm:text-xs">
                                                                     ON CLOCK
+                                                                </div>
+                                                            ) : transferredToHere ? (
+                                                                <div className="text-blue-400 text-[9px] sm:text-[10px] font-medium">
+                                                                    <div>Via Trade</div>
+                                                                    <div className="text-slate-400 text-[8px]">from {originalOwner?.name}</div>
                                                                 </div>
                                                             ) : (
                                                                 '---'
