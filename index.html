@@ -1065,12 +1065,14 @@
 
                 // Load state first, then ensure it's properly initialized
                 this.state = this.loadState();
-                console.log('DraftStore: State after loadState:', {
+                console.log('🔍 CRITICAL DEBUG - State after loadState:', {
                     hasTeams: !!this.state?.teams,
                     teamsLength: this.state?.teams?.length,
                     hasDraftSettings: !!this.state?.draftSettings,
                     teamCount: this.state?.draftSettings?.teamCount,
-                    rounds: this.state?.draftSettings?.rounds
+                    rounds: this.state?.draftSettings?.rounds,
+                    pickNotes: this.state?.pickNotes,
+                    pickNotesCount: Object.keys(this.state?.pickNotes || {}).length
                 });
 
                 // Ensure state is initialized even if loading fails
@@ -1094,12 +1096,14 @@
                     this.state = { ...this.getInitialState(), pickNotes: preservedPickNotes, keepers: preservedKeepers };
                 }
 
-                console.log('DraftStore: Final state after validation:', {
+                console.log('🔍 CRITICAL DEBUG - Final state after validation:', {
                     hasTeams: !!this.state?.teams,
                     teamsLength: this.state?.teams?.length,
                     hasDraftSettings: !!this.state?.draftSettings,
                     teamCount: this.state?.draftSettings?.teamCount,
-                    rounds: this.state?.draftSettings?.rounds
+                    rounds: this.state?.draftSettings?.rounds,
+                    pickNotes: this.state?.pickNotes,
+                    pickNotesCount: Object.keys(this.state?.pickNotes || {}).length
                 });
 
                 // Force save initial state to ensure persistence works
@@ -1436,6 +1440,7 @@
                             ...this.getInitialState(), // Start with defaults
                             ...data.state, // Override with database state
                             keepers: keepersToUse, // Use intelligent keeper selection
+                            pickNotes: this.state.pickNotes || {}, // Preserve existing pick notes
                             playersData: this.state.playersData || {}, // Preserve existing player data
                             lastUpdate: data.timestamp
                         };
@@ -1666,9 +1671,13 @@
                     }
                 }
 
+                // Always preserve pickNotes from local state since they're managed separately
+                merged.pickNotes = localState.pickNotes || {};
+
                 console.log('🔄 Merge result:', {
                     picksCount: merged.picks.length,
                     keepersCount: Object.keys(merged.keepers).length,
+                    pickNotesCount: Object.keys(merged.pickNotes).length,
                     currentPick: merged.currentPick,
                     teamsCount: merged.teams?.length
                 });
