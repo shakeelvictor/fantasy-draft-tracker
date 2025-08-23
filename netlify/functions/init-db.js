@@ -48,6 +48,23 @@ exports.handler = async (event, context) => {
             ON draft_state(draft_id)
         `;
 
+        // Create pick_notes table
+        await sql`
+            CREATE TABLE IF NOT EXISTS pick_notes (
+                id SERIAL PRIMARY KEY,
+                pick_key VARCHAR(50) NOT NULL UNIQUE,
+                note TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        `;
+
+        // Create index on pick_key for faster queries
+        await sql`
+            CREATE INDEX IF NOT EXISTS idx_pick_notes_pick_key 
+            ON pick_notes(pick_key)
+        `;
+
         return {
             statusCode: 200,
             headers,
