@@ -2593,9 +2593,15 @@
                         this.clearNoteFromLocalStorage(pickKey);
                         showToast('Note saved to database', 'success');
                     } else {
-                        console.warn('⚠️ Database endpoint not available, falling back to localStorage');
+                        const errorText = await response.text();
+                        console.error('❌ Database save failed:', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            error: errorText,
+                            url: response.url
+                        });
                         this.saveNoteToLocalStorage(pickKey, noteText);
-                        showToast('Note saved locally (database unavailable)', 'warning');
+                        showToast(`Note saved locally (database error: ${response.status})`, 'warning');
                     }
                 } catch (error) {
                     console.warn('⚠️ Database not available, falling back to localStorage:', error.message);
@@ -2621,9 +2627,15 @@
                         this.deleteNoteFromLocalStorage(pickKey);
                         showToast('Note removed from database', 'success');
                     } else {
-                        console.warn('⚠️ Database endpoint not available, falling back to localStorage');
+                        const errorText = await response.text();
+                        console.error('❌ Database delete failed:', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            error: errorText,
+                            url: response.url
+                        });
                         this.deleteNoteFromLocalStorage(pickKey);
-                        showToast('Note removed locally (database unavailable)', 'warning');
+                        showToast(`Note removed locally (database error: ${response.status})`, 'warning');
                     }
                 } catch (error) {
                     console.warn('⚠️ Database not available, falling back to localStorage:', error.message);
@@ -3613,11 +3625,9 @@
                 teams,
                 tradePlayer,
                 pickNotes,
-                addPickNote
+                addPickNote,
+                isViewOnly
             } = useDraftStore();
-
-            // Check if we're in view-only mode
-            const isViewOnly = new URLSearchParams(window.location.search).get('view') === 'true';
 
             // Check if this player is already drafted
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
@@ -4934,7 +4944,8 @@
                                         
                                         
                                         {/* Notes Section */}
-                                        <div className="mt-4 border-t border-slate-600 pt-4">
+                                        {!isViewOnly && (
+                                            <div className="mt-4 border-t border-slate-600 pt-4">
                                             {!showNoteInput ? (
                                                 <div className="text-center">
                                                     {existingNote && (
@@ -4994,6 +5005,7 @@
                                                 </div>
                                             )}
                                         </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
