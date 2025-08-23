@@ -3629,6 +3629,10 @@
                 isViewOnly
             } = useDraftStore();
 
+            // Fallback view-only check in case store value is incorrect
+            const urlViewOnly = new URLSearchParams(window.location.search).get('view') === 'true';
+            const actuallyViewOnly = isViewOnly || urlViewOnly;
+
             // Check if this player is already drafted
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
             const draftedPick = picks.find(pick => pick.playerId === player.player_id);
@@ -3636,6 +3640,18 @@
             // Get existing note for this pick
             const pickKey = draftedPick ? `${draftedPick.round}-${draftedPick.teamId}` : null;
             const existingNote = pickKey ? pickNotes[pickKey] : null;
+            
+            // Debug logging for notes section visibility
+            console.log('🔍 Player Modal Notes Debug:', {
+                playerName: `${player.first_name} ${player.last_name}`,
+                isDrafted,
+                isViewOnly,
+                urlViewOnly,
+                actuallyViewOnly,
+                pickKey,
+                existingNote,
+                shouldShowNotes: isDrafted && !actuallyViewOnly
+            });
             
             // Initialize note text with existing note
             React.useEffect(() => {
@@ -3646,7 +3662,7 @@
 
             // Check if player is a keeper (simple check - if player ID exists in keepers object values)
             const isKeeper = Object.values(keepers || {}).includes(player.player_id);
-            const canDraft = currentPick && !isDrafted && !isViewOnly && !isKeeper;
+            const canDraft = currentPick && !isDrafted && !actuallyViewOnly && !isKeeper;
 
             useEffect(() => {
                 const fetchFantasyProData = async () => {
@@ -4944,7 +4960,7 @@
                                         
                                         
                                         {/* Notes Section */}
-                                        {!isViewOnly && (
+                                        {!actuallyViewOnly && (
                                             <div className="mt-4 border-t border-slate-600 pt-4">
                                             {!showNoteInput ? (
                                                 <div className="text-center">
