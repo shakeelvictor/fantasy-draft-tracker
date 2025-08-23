@@ -1406,9 +1406,11 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        console.log(`✅ ${mode} Loaded database state:`, {
+                        console.log(`🔍 PICK NOTES DEBUG - Loaded database state:`, {
                             picks: data.state?.picks?.length || 0,
                             keepers: Object.keys(data.state?.keepers || {}).length,
+                            pickNotes: data.state?.pickNotes,
+                            pickNotesCount: Object.keys(data.state?.pickNotes || {}).length,
                             teams: data.state?.teams?.length || 0,
                             timestamp: new Date(data.timestamp).toLocaleTimeString()
                         });
@@ -1437,6 +1439,11 @@
                             playersData: this.state.playersData || {}, // Preserve existing player data
                             lastUpdate: data.timestamp
                         };
+
+                        console.log('🔍 PICK NOTES DEBUG - Final merged state:', {
+                            pickNotes: this.state.pickNotes,
+                            pickNotesCount: Object.keys(this.state.pickNotes || {}).length
+                        });
 
                         // Rebuild history if we have picks but no history (for undo functionality)
                         if (!this.isViewOnly && this.state.picks && this.state.picks.length > 0 && (!this.state.history || this.state.history.length === 0)) {
@@ -1794,9 +1801,11 @@
                         }
                     };
 
-                    console.log('💾 Saving to localStorage:', {
+                    console.log('🔍 PICK NOTES DEBUG - Broadcasting shared data:', {
                         timestamp: sharedData.timestamp,
-                        picks: sharedData.state.picks.length
+                        picks: sharedData.state.picks.length,
+                        pickNotes: sharedData.state.pickNotes,
+                        pickNotesCount: Object.keys(sharedData.state.pickNotes || {}).length
                     });
                     localStorage.setItem('fantasy-draft-shared', JSON.stringify(sharedData));
 
@@ -2544,11 +2553,21 @@
                     showToast(`Round ${round} note saved`, 'success');
                 }
 
+                console.log('🔍 PICK NOTES DEBUG - Before setState:', {
+                    pickKey,
+                    note: note?.trim(),
+                    updatedNotes,
+                    currentPickNotes: this.state.pickNotes
+                });
+
                 this.setState({
                     pickNotes: updatedNotes
                 }, true);
 
-                // Notes are now automatically saved to database via existing state sync system
+                console.log('🔍 PICK NOTES DEBUG - After setState:', {
+                    pickNotes: this.state.pickNotes,
+                    willBroadcast: true
+                });
             }
 
 
