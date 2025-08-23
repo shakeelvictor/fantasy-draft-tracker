@@ -1140,8 +1140,7 @@
                     },
                     keepers: {},
                     trades: [],
-                    pickTrades: [], // Track pick transfers/trades
-                    playerTrades: [], // Track post-draft player trades
+                    pickAssignments: {}, // Track which team owns each pick position: "round-originalTeam" -> "assignedTeam"
                     history: [],
                     currentHistoryIndex: -1,
                     playersData: {},
@@ -2350,7 +2349,7 @@
                     return;
                 }
 
-                const { picks, currentPick, history, currentHistoryIndex, draftSettings, playersData, teams, keepers } = this.state;
+                const { picks, currentPick, history, currentHistoryIndex, draftSettings, playersData, teams, keepers, pickAssignments } = this.state;
 
                 // Check if this round/team already has a keeper
                 const keeperKey = `${teamId}-${currentPick.round}`;
@@ -2368,9 +2367,15 @@
                     return;
                 }
 
+                // Check if this pick has been assigned to another team
+                const pickKey = `${currentPick.round}-${currentPick.teamId}`;
+                const assignedTeamId = pickAssignments[pickKey];
+                const actualTeamId = assignedTeamId || teamId;
+
                 const newPick = {
                     playerId,
-                    teamId,
+                    teamId: actualTeamId,
+                    originalTeamId: teamId !== actualTeamId ? teamId : undefined, // Track original team if assigned elsewhere
                     round: currentPick.round,
                     pickNumber: currentPick.pickNumber,
                     pickInRound: currentPick.pickInRound,
@@ -2506,66 +2511,37 @@
                 }
             }
 
-            transferPick(fromTeamId, round, toTeamId) {
+            assignPickToTeam(round, originalTeamId, assignedTeamId) {
                 if (this.isViewOnly) {
-                    showToast('View-only mode - cannot transfer picks', 'error');
+                    showToast('View-only mode - cannot assign picks', 'error');
                     return;
                 }
 
-                const { picks, teams, playersData, pickTrades } = this.state;
+                const { teams, pickAssignments } = this.state;
                 
-                // Find the target team
-                const targetTeam = teams.find(team => team.id === toTeamId);
-                const fromTeam = teams.find(team => team.id === fromTeamId);
-                if (!targetTeam || !fromTeam) {
+                // Find the assigned team
+                const assignedTeam = teams.find(team => team.id === assignedTeamId);
+                if (!assignedTeam) {
                     showToast('Invalid team selected', 'error');
                     return;
                 }
 
-                // Find if there's already a pick in this position
-                const existingPickIndex = picks.findIndex(pick => 
-                    pick.teamId === fromTeamId && pick.round === round
-                );
+                const pickKey = `${round}-${originalTeamId}`;
+                const updatedAssignments = { ...pickAssignments };
 
-                // Record the pick transfer
-                const pickTradeRecord = {
-                    id: `trade-${Date.now()}`,
-                    fromTeamId,
-                    toTeamId,
-                    round,
-                    timestamp: Date.now(),
-                    type: 'pick'
-                };
-
-                if (existingPickIndex !== -1) {
-                    // Transfer existing pick to new team
-                    const existingPick = picks[existingPickIndex];
-                    const updatedPicks = [...picks];
-                    updatedPicks[existingPickIndex] = {
-                        ...existingPick,
-                        teamId: toTeamId,
-                        isTraded: true,
-                        originalTeamId: fromTeamId // Keep track of original owner
-                    };
-
-                    pickTradeRecord.playerId = existingPick.playerId;
-
-                    this.setState({
-                        picks: updatedPicks,
-                        pickTrades: [...pickTrades, pickTradeRecord]
-                    }, true);
-
-                    const player = playersData[existingPick.playerId];
-                    const playerName = player ? `${player.first_name || ''} ${player.last_name || ''}`.trim() : 'Drafted player';
-                    showToast(`${playerName} transferred to ${targetTeam.name}`, 'success');
+                if (assignedTeamId === originalTeamId) {
+                    // Assigning back to original team - remove the assignment
+                    delete updatedAssignments[pickKey];
+                    showToast(`Round ${round} pick returned to original team`, 'success');
                 } else {
-                    // For empty picks, record the future pick transfer
-                    this.setState({
-                        pickTrades: [...pickTrades, pickTradeRecord]
-                    }, true);
-                    
-                    showToast(`Round ${round} pick transferred to ${targetTeam.name}`, 'success');
+                    // Assign to different team
+                    updatedAssignments[pickKey] = assignedTeamId;
+                    showToast(`Round ${round} pick assigned to ${assignedTeam.name}`, 'success');
                 }
+
+                this.setState({
+                    pickAssignments: updatedAssignments
+                }, true);
             }
 
             tradePlayer(playerId, fromTeamId, toTeamId) {
@@ -3121,7 +3097,7 @@
                 setViewOnlyMode: (isViewOnly) => draftStore.setViewOnlyMode(isViewOnly),
                 resetDraft: () => draftStore.resetDraft(),
                 deleteArchivedDraft: (draftId) => draftStore.deleteArchivedDraft(draftId),
-                transferPick: (fromTeamId, round, toTeamId) => draftStore.transferPick(fromTeamId, round, toTeamId),
+                assignPickToTeam: (round, originalTeamId, assignedTeamId) => draftStore.assignPickToTeam(round, originalTeamId, assignedTeamId),
                 tradePlayer: (playerId, fromTeamId, toTeamId) => draftStore.tradePlayer(playerId, fromTeamId, toTeamId)
             };
         }
@@ -4899,7 +4875,7 @@
                 currentPick,
                 showPlayerPanel,
                 keepers,
-                pickTrades
+                pickAssignments
             } = useDraftStore();
 
             // Debug: Log keepers in DraftBoard component
@@ -4926,25 +4902,32 @@
             const safeDraftSettings = draftSettings || { teamCount: 11, rounds: 20 };
 
             const getPickForTeamAndRound = (teamId, round) => {
-                // First check if there's an actual pick made
+                // First check if there's an actual pick made for this team/round
                 const pick = picks.find(pick =>
                     pick.teamId === teamId && pick.round === round
                 );
 
                 if (pick) return pick;
 
-                // Check if this pick slot has been transferred to this team
-                const transferredHere = pickTrades?.find(trade => 
-                    trade.toTeamId === teamId && trade.round === round && !trade.playerId
-                );
-                
-                // Check if this team's pick has been transferred away
-                const transferredAway = pickTrades?.find(trade => 
-                    trade.fromTeamId === teamId && trade.round === round && !trade.playerId
-                );
-                
-                // If this team's pick was transferred away, don't show it here
-                if (transferredAway) {
+                // Check if any other team's pick has been assigned to this team for this round
+                const assignedToThisTeam = Object.entries(pickAssignments).find(([pickKey, assignedTeamId]) => {
+                    const [pickRound, originalTeamId] = pickKey.split('-');
+                    return assignedTeamId === teamId && parseInt(pickRound) === round;
+                });
+
+                if (assignedToThisTeam) {
+                    // This team has been assigned someone else's pick - check if there's a pick for that slot
+                    const [pickRound, originalTeamId] = assignedToThisTeam[0].split('-');
+                    const assignedPick = picks.find(pick => 
+                        pick.round === parseInt(pickRound) && pick.teamId === teamId
+                    );
+                    if (assignedPick) return assignedPick;
+                }
+
+                // Check if this team's pick has been assigned to another team
+                const pickKey = `${round}-${teamId}`;
+                if (pickAssignments[pickKey]) {
+                    // This team's pick has been assigned away, don't show it here
                     return null;
                 }
 
@@ -5064,12 +5047,19 @@
                                                 currentPick.teamId === team.id &&
                                                 currentPick.round === round;
 
-                                            // Check if this is a transferred pick slot (empty slot transferred to this team)
-                                            const transferredToHere = pickTrades?.find(trade => 
-                                                trade.toTeamId === team.id && trade.round === round && !trade.playerId
-                                            );
-                                            const originalOwner = transferredToHere ? 
-                                                safeTeams.find(t => t.id === transferredToHere.fromTeamId) : null;
+                                            // Check if this is an assigned pick slot
+                                            const pickKey = `${round}-${team.id}`;
+                                            const assignedTeamId = pickAssignments[pickKey];
+                                            const isAssignedAway = !!assignedTeamId;
+                                            const assignedTeam = isAssignedAway ? safeTeams.find(t => t.id === assignedTeamId) : null;
+
+                                            // Check if this team has been assigned someone else's pick for this round
+                                            const assignedToThisTeam = Object.entries(pickAssignments).find(([key, assignedId]) => {
+                                                const [pickRound] = key.split('-');
+                                                return assignedId === team.id && parseInt(pickRound) === round;
+                                            });
+                                            const originalOwner = assignedToThisTeam ? 
+                                                safeTeams.find(t => t.id === assignedToThisTeam[0].split('-')[1]) : null;
 
                                             return (
                                                 <div
@@ -5080,7 +5070,8 @@
                                                         ${pick && !pick.pending ? 'new-pick' : 'bg-slate-900/30'}
                                                         ${pick?.pending ? 'bg-yellow-900/30 border border-yellow-600/50' : ''}
                                                         ${isCurrentPick ? 'on-clock' : ''}
-                                                        ${transferredToHere ? 'bg-blue-900/20 border border-blue-500/50' : ''}
+                                                        ${isAssignedAway ? 'bg-red-900/20 border border-red-500/50' : ''}
+                                                        ${originalOwner ? 'bg-blue-900/20 border border-blue-500/50' : ''}
                                                         flex flex-col justify-center relative cursor-pointer
                                                         hover:ring-2 hover:ring-yellow-400/50 transition-all duration-200
                                                     `}
@@ -5091,9 +5082,11 @@
                                                         }
                                                     }}
                                                     title={pick && playerInfo ? 
-                                                        `${playerInfo.name}${pick.isTraded ? ` (Originally: ${safeTeams.find(t => t.id === pick.originalTeamId)?.name || 'Unknown'})` : ''} - Click to transfer` : 
-                                                        transferredToHere ? 
-                                                            `Round ${round} pick (Originally: ${originalOwner?.name || 'Unknown'}) - Click to transfer` :
+                                                        `${playerInfo.name}${pick.originalTeamId ? ` (Originally: ${safeTeams.find(t => t.id === pick.originalTeamId)?.name || 'Unknown'})` : ''} - Click to reassign` : 
+                                                        isAssignedAway ? 
+                                                            `Round ${round} pick assigned to ${assignedTeam?.name} - Click to reassign` :
+                                                        originalOwner ? 
+                                                            `Round ${round} pick (Originally: ${originalOwner?.name || 'Unknown'}) - Click to reassign` :
                                                             `Click to assign this Round ${round} pick to another team`
                                                     }
                                                 >
@@ -5105,18 +5098,23 @@
                                                                     K
                                                                 </span>
                                                             )}
-                                                            {pick?.isTraded && (
-                                                                <span className="bg-orange-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title="Traded player">
-                                                                    T
+                                                            {pick?.originalTeamId && (
+                                                                <span className="bg-orange-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Originally: ${safeTeams.find(t => t.id === pick.originalTeamId)?.name}`}>
+                                                                    ↗
                                                                 </span>
                                                             )}
-                                                            {transferredToHere && !pick && (
-                                                                <span className="bg-blue-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Pick transferred from ${originalOwner?.name}`}>
-                                                                    ↔
+                                                            {isAssignedAway && !pick && (
+                                                                <span className="bg-red-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Pick assigned to ${assignedTeam?.name}`}>
+                                                                    →
                                                                 </span>
                                                             )}
-                                                            <span className="text-yellow-400/60 hover:text-yellow-400 transition-colors text-[8px] sm:text-[9px]" title="Click to transfer">
-                                                                ⇄
+                                                            {originalOwner && !pick && (
+                                                                <span className="bg-blue-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Pick assigned from ${originalOwner?.name}`}>
+                                                                    ←
+                                                                </span>
+                                                            )}
+                                                            <span className="text-yellow-400/60 hover:text-yellow-400 transition-colors text-[8px] sm:text-[9px]" title="Click to assign">
+                                                                ⚙
                                                             </span>
                                                         </div>
                                                     </div>
@@ -5166,10 +5164,15 @@
                                                                 <div className="animate-pulse font-semibold text-blue-400 text-[10px] sm:text-xs">
                                                                     ON CLOCK
                                                                 </div>
-                                                            ) : transferredToHere ? (
+                                                            ) : isAssignedAway ? (
+                                                                <div className="text-red-400 text-[9px] sm:text-[10px] font-medium">
+                                                                    <div>Assigned to</div>
+                                                                    <div className="text-slate-400 text-[8px]">{assignedTeam?.name}</div>
+                                                                </div>
+                                                            ) : originalOwner ? (
                                                                 <div className="text-blue-400 text-[9px] sm:text-[10px] font-medium">
-                                                                    <div>Via Trade</div>
-                                                                    <div className="text-slate-400 text-[8px]">from {originalOwner?.name}</div>
+                                                                    <div>From Trade</div>
+                                                                    <div className="text-slate-400 text-[8px]">with {originalOwner?.name}</div>
                                                                 </div>
                                                             ) : (
                                                                 '---'
@@ -6114,13 +6117,12 @@
             );
         };
 
-        // Team Selection Modal for Pick Transfers
+        // Team Selection Modal for Pick Assignment
         const TeamSelectionModal = ({ onClose, fromTeamId, round, existingPick }) => {
-            const { teams, transferPick } = useDraftStore();
+            const { teams, assignPickToTeam } = useDraftStore();
             const [closing, setClosing] = useState(false);
             
             const currentTeam = teams.find(team => team.id === fromTeamId);
-            const otherTeams = teams.filter(team => team.id !== fromTeamId);
 
             const handleClose = () => {
                 setClosing(true);
@@ -6128,7 +6130,7 @@
             };
 
             const handleTeamSelect = (toTeamId) => {
-                transferPick(fromTeamId, round, toTeamId);
+                assignPickToTeam(round, fromTeamId, toTeamId);
                 handleClose();
             };
 
@@ -6136,27 +6138,27 @@
                 <div className={`fixed inset-0 modal-backdrop flex items-center justify-center z-[70] p-4 ${closing ? 'closing' : ''}`}>
                     <div className={`glass-dark rounded-xl p-4 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl ${closing ? 'modal-exit' : 'modal-enter'}`}>
                         <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
-                            Transfer Pick
+                            Assign Pick
                         </h2>
                         
                         <div className="text-center mb-6">
                             <div className="text-slate-300 mb-2">
                                 {existingPick ? (
-                                    <>Transferring <strong>{existingPick.playerName || 'drafted player'}</strong></>
+                                    <>Reassign this drafted player</>
                                 ) : (
-                                    <>Transferring empty pick</>
+                                    <>Assign this pick position</>
                                 )}
                             </div>
                             <div className="text-lg font-semibold text-white">
                                 Round {round} • {currentTeam?.name}
                             </div>
                             <div className="text-slate-400 text-sm mt-1">
-                                Select which team should have this pick
+                                Select which team should own this pick
                             </div>
                         </div>
 
                         <div className="space-y-3 mb-6">
-                            {otherTeams.map(team => (
+                            {teams.map(team => (
                                 <button
                                     key={team.id}
                                     onClick={() => handleTeamSelect(team.id)}
