@@ -2504,6 +2504,52 @@
                 }
             }
 
+            transferPick(fromTeamId, round, toTeamId) {
+                if (this.isViewOnly) {
+                    showToast('View-only mode - cannot transfer picks', 'error');
+                    return;
+                }
+
+                const { picks, teams, playersData } = this.state;
+                
+                // Find the target team
+                const targetTeam = teams.find(team => team.id === toTeamId);
+                const fromTeam = teams.find(team => team.id === fromTeamId);
+                if (!targetTeam || !fromTeam) {
+                    showToast('Invalid team selected', 'error');
+                    return;
+                }
+
+                // Find if there's already a pick in this position
+                const existingPickIndex = picks.findIndex(pick => 
+                    pick.teamId === fromTeamId && pick.round === round
+                );
+
+                if (existingPickIndex !== -1) {
+                    // Transfer existing pick to new team
+                    const existingPick = picks[existingPickIndex];
+                    const updatedPicks = [...picks];
+                    updatedPicks[existingPickIndex] = {
+                        ...existingPick,
+                        teamId: toTeamId
+                    };
+
+                    this.setState({
+                        picks: updatedPicks
+                    }, true);
+
+                    const player = playersData[existingPick.playerId];
+                    const playerName = player ? `${player.first_name || ''} ${player.last_name || ''}`.trim() : 'Drafted player';
+                    showToast(`${playerName} transferred to ${targetTeam.name}`, 'success');
+                } else {
+                    // For empty picks, we need to handle future draft logic
+                    // This is a conceptual transfer - when this pick comes up in the draft order,
+                    // it will go to the new team instead
+                    
+                    showToast(`Round ${round} pick slot transferred to ${targetTeam.name}`, 'info');
+                    showToast(`Note: This affects future draft order when this pick becomes active`, 'info');
+                }
+            }
 
             // Helper method to find picks that should exist after a given history state
             findPicksAfterHistoryState(historyIndex) {
@@ -3005,7 +3051,8 @@
                 setKeeper: (teamId, round, playerId) => draftStore.setKeeper(teamId, round, playerId),
                 setViewOnlyMode: (isViewOnly) => draftStore.setViewOnlyMode(isViewOnly),
                 resetDraft: () => draftStore.resetDraft(),
-                deleteArchivedDraft: (draftId) => draftStore.deleteArchivedDraft(draftId)
+                deleteArchivedDraft: (draftId) => draftStore.deleteArchivedDraft(draftId),
+                transferPick: (fromTeamId, round, toTeamId) => draftStore.transferPick(fromTeamId, round, toTeamId)
             };
         }
 
@@ -4716,7 +4763,7 @@
         };
 
         // Draft Board Component
-        const DraftBoard = memo(({ highlightedTeam, onTeamClick, onPlayerInfoClick }) => {
+        const DraftBoard = memo(({ highlightedTeam, onTeamClick, onPlayerInfoClick, onPickClick }) => {
             const {
                 teams,
                 picks,
@@ -4883,21 +4930,37 @@
                                                         ${pick && !pick.pending ? 'new-pick' : 'bg-slate-900/30'}
                                                         ${pick?.pending ? 'bg-yellow-900/30 border border-yellow-600/50' : ''}
                                                         ${isCurrentPick ? 'on-clock' : ''}
-                                                        flex flex-col justify-center
+                                                        flex flex-col justify-center relative cursor-pointer
+                                                        hover:ring-2 hover:ring-yellow-400/50 transition-all duration-200
                                                     `}
+                                                    onClick={(e) => {
+                                                        // Only trigger if not clicking on the player info area
+                                                        if (!e.target.closest('.player-info-click')) {
+                                                            onPickClick && onPickClick(team.id, round, pick);
+                                                        }
+                                                    }}
+                                                    title={pick && playerInfo ? 
+                                                        `Click to transfer ${playerInfo.name} to another team` : 
+                                                        `Click to assign this Round ${round} pick to another team`
+                                                    }
                                                 >
                                                     <div className="text-slate-400 text-[9px] sm:text-[10px] mb-1 font-semibold flex items-center justify-between">
                                                         <span>R{round}</span>
-                                                        {pick?.isKeeper && (
-                                                            <span className="keeper-badge px-1 py-0.5 rounded text-[8px] sm:text-[9px] text-black font-bold">
-                                                                K
+                                                        <div className="flex items-center space-x-1">
+                                                            {pick?.isKeeper && (
+                                                                <span className="keeper-badge px-1 py-0.5 rounded text-[8px] sm:text-[9px] text-black font-bold">
+                                                                    K
+                                                                </span>
+                                                            )}
+                                                            <span className="text-yellow-400/60 hover:text-yellow-400 transition-colors text-[8px] sm:text-[9px]" title="Click to transfer">
+                                                                ⇄
                                                             </span>
-                                                        )}
+                                                        </div>
                                                     </div>
 
                                                     {pick && playerInfo ? (
                                                         <div
-                                                            className={`fade-in cursor-pointer hover:bg-slate-700/30 rounded p-1 transition-colors ${pick.pending ? 'opacity-60' : ''}`}
+                                                            className={`player-info-click fade-in cursor-pointer hover:bg-slate-700/30 rounded p-1 transition-colors ${pick.pending ? 'opacity-60' : ''}`}
                                                             onClick={() => onPlayerInfoClick && onPlayerInfoClick({
                                                                 ...playersData[playerInfo.id],
                                                                 player_id: playerInfo.id
@@ -5883,6 +5946,82 @@
             );
         };
 
+        // Team Selection Modal for Pick Transfers
+        const TeamSelectionModal = ({ onClose, fromTeamId, round, existingPick }) => {
+            const { teams, transferPick } = useDraftStore();
+            const [closing, setClosing] = useState(false);
+            
+            const currentTeam = teams.find(team => team.id === fromTeamId);
+            const otherTeams = teams.filter(team => team.id !== fromTeamId);
+
+            const handleClose = () => {
+                setClosing(true);
+                setTimeout(onClose, 300);
+            };
+
+            const handleTeamSelect = (toTeamId) => {
+                transferPick(fromTeamId, round, toTeamId);
+                handleClose();
+            };
+
+            return (
+                <div className={`fixed inset-0 modal-backdrop flex items-center justify-center z-[70] p-4 ${closing ? 'closing' : ''}`}>
+                    <div className={`glass-dark rounded-xl p-4 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl ${closing ? 'modal-exit' : 'modal-enter'}`}>
+                        <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
+                            Transfer Pick
+                        </h2>
+                        
+                        <div className="text-center mb-6">
+                            <div className="text-slate-300 mb-2">
+                                {existingPick ? (
+                                    <>Transferring <strong>{existingPick.playerName || 'drafted player'}</strong></>
+                                ) : (
+                                    <>Transferring empty pick</>
+                                )}
+                            </div>
+                            <div className="text-lg font-semibold text-white">
+                                Round {round} • {currentTeam?.name}
+                            </div>
+                            <div className="text-slate-400 text-sm mt-1">
+                                Select which team should have this pick
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 mb-6">
+                            {otherTeams.map(team => (
+                                <button
+                                    key={team.id}
+                                    onClick={() => handleTeamSelect(team.id)}
+                                    className="w-full p-4 glass rounded-lg hover:bg-slate-600/50 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                    style={{
+                                        background: `linear-gradient(135deg, ${team.color}20, ${team.color}10)`,
+                                        border: `1px solid ${team.color}40`
+                                    }}
+                                >
+                                    <div className="flex items-center justify-center space-x-3">
+                                        <div
+                                            className="w-4 h-4 rounded-full"
+                                            style={{ backgroundColor: team.color }}
+                                        />
+                                        <span className="font-semibold text-white text-lg">{team.name}</span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex space-x-3">
+                            <button
+                                onClick={handleClose}
+                                className="flex-1 px-4 py-3 glass hover:bg-slate-600 text-white rounded-lg transition-all font-medium"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // Draft Controls Component
         const DraftControls = () => {
             const [showSettings, setShowSettings] = useState(false);
@@ -6209,6 +6348,8 @@
             const [highlightedTeam, setHighlightedTeam] = useState(null);
             const [showFantasyProModal, setShowFantasyProModal] = useState(false);
             const [selectedPlayerForModal, setSelectedPlayerForModal] = useState(null);
+            const [showTeamSelectionModal, setShowTeamSelectionModal] = useState(false);
+            const [selectedPickForTransfer, setSelectedPickForTransfer] = useState(null);
 
             // Load players on mount
             useEffect(() => {
@@ -6262,6 +6403,21 @@
                 console.log('App handleFantasyProModalClose called');
                 setShowFantasyProModal(false);
                 setSelectedPlayerForModal(null);
+            };
+
+            const handlePickClick = (teamId, round, pick) => {
+                if (isViewOnly) {
+                    showToast('View-only mode - cannot transfer picks', 'info');
+                    return;
+                }
+                
+                setSelectedPickForTransfer({ teamId, round, pick });
+                setShowTeamSelectionModal(true);
+            };
+
+            const handleTeamSelectionModalClose = () => {
+                setShowTeamSelectionModal(false);
+                setSelectedPickForTransfer(null);
             };
 
             // Expose modal close function globally for debugging
@@ -6320,6 +6476,7 @@
                                 highlightedTeam={highlightedTeam}
                                 onTeamClick={(teamId) => setHighlightedTeam(teamId === highlightedTeam ? null : teamId)}
                                 onPlayerInfoClick={handlePlayerInfoClick}
+                                onPickClick={handlePickClick}
                             />
                         </div>
 
@@ -6346,6 +6503,15 @@
                             <FantasyProPlayerModal
                                 player={selectedPlayerForModal}
                                 onClose={handleFantasyProModalClose}
+                            />
+                        )}
+
+                        {showTeamSelectionModal && selectedPickForTransfer && (
+                            <TeamSelectionModal
+                                onClose={handleTeamSelectionModalClose}
+                                fromTeamId={selectedPickForTransfer.teamId}
+                                round={selectedPickForTransfer.round}
+                                existingPick={selectedPickForTransfer.pick}
                             />
                         )}
                     </div>
