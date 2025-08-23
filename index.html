@@ -2621,6 +2621,12 @@
             }
 
             async loadNotesFromDatabase() {
+                // Don't load notes in view-only mode
+                if (this.isViewOnly) {
+                    console.log('👁️ Skipping notes loading - view-only mode');
+                    return {};
+                }
+
                 try {
                     console.log('📖 Attempting to load notes from database...');
                     
@@ -2699,6 +2705,12 @@
             }
 
             loadPickNotesFromLocalStorage() {
+                // Don't load notes in view-only mode
+                if (this.isViewOnly) {
+                    console.log('👁️ Skipping pickNotes loading - view-only mode');
+                    return {};
+                }
+
                 try {
                     const rawData = localStorage.getItem('fantasy-pick-notes');
                     const notes = JSON.parse(rawData || '{}');
@@ -3246,6 +3258,7 @@
 
             return {
                 ...state,
+                isViewOnly: draftStore.isViewOnly,
                 loadPlayers: () => draftStore.loadPlayersData(),
                 makePick: (playerId, teamId, isKeeper) => draftStore.makePick(playerId, teamId, isKeeper),
                 undoPick: () => draftStore.undoPick(),
@@ -5066,7 +5079,8 @@
                 currentPick,
                 showPlayerPanel,
                 keepers,
-                pickNotes
+                pickNotes,
+                isViewOnly
             } = useDraftStore();
 
             // Debug: Log keepers in DraftBoard component
@@ -5229,7 +5243,7 @@
                                                         ${pick && !pick.pending ? 'new-pick' : 'bg-slate-900/30'}
                                                         ${pick?.pending ? 'bg-yellow-900/30 border border-yellow-600/50' : ''}
                                                         ${isCurrentPick ? 'on-clock' : ''}
-                                                        ${pickNote ? 'bg-blue-900/20 border border-blue-500/50' : ''}
+                                                        ${!isViewOnly && pickNote ? 'bg-blue-900/20 border border-blue-500/50' : ''}
                                                         flex flex-col justify-center relative cursor-pointer
                                                         hover:ring-2 hover:ring-yellow-400/50 transition-all duration-200
                                                     `}
@@ -5240,10 +5254,10 @@
                                                         }
                                                     }}
                                                     title={pick && playerInfo ? 
-                                                        `${playerInfo.name}${pickNote ? ` (Note: ${pickNote})` : ''} - Click to add/edit note` : 
-                                                        pickNote ? 
+                                                        `${playerInfo.name}${!isViewOnly && pickNote ? ` (Note: ${pickNote})` : ''}${!isViewOnly ? ' - Click to add/edit note' : ''}` : 
+                                                        !isViewOnly && pickNote ? 
                                                             `${pickNote} - Click to edit note` :
-                                                            `Click to add a note for this Round ${round} pick`
+                                                            !isViewOnly ? `Click to add a note for this Round ${round} pick` : `Round ${round} pick`
                                                     }
                                                 >
                                                     <div className="text-slate-400 text-[9px] sm:text-[10px] mb-1 font-semibold flex items-center justify-between">
@@ -5254,7 +5268,7 @@
                                                                     K
                                                                 </span>
                                                             )}
-                                                            {pickNote && (
+                                                            {!isViewOnly && pickNote && (
                                                                 <span className="bg-blue-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Note: ${pickNote}`}>
                                                                     📝
                                                                 </span>
@@ -5287,7 +5301,7 @@
                                                                     {pick.pending && (
                                                                         <span className="text-yellow-400 text-[8px] ml-1">(KEEPER)</span>
                                                                     )}
-                                                                    {pickNote && (
+                                                                    {!isViewOnly && pickNote && (
                                                                         <div className="text-blue-400 text-[8px] font-bold mt-1">
                                                                             📝 {pickNote}
                                                                         </div>
@@ -5312,7 +5326,7 @@
                                                                 <div className="animate-pulse font-semibold text-blue-400 text-[10px] sm:text-xs">
                                                                     ON CLOCK
                                                                 </div>
-                                                            ) : pickNote ? (
+                                                            ) : !isViewOnly && pickNote ? (
                                                                 <div className="text-blue-400 text-[9px] sm:text-[10px] font-medium">
                                                                     <div>📝 {pickNote}</div>
                                                                 </div>
@@ -6740,7 +6754,7 @@
 
             const handlePickClick = (teamId, round, pick) => {
                 if (isViewOnly) {
-                    showToast('View-only mode - cannot transfer picks', 'info');
+                    showToast('View-only mode - cannot add notes', 'info');
                     return;
                 }
                 
