@@ -1083,13 +1083,15 @@
                 if (!this.state.teams || !Array.isArray(this.state.teams) || this.state.teams.length === 0) {
                     console.warn('DraftStore: Teams not properly initialized, resetting to initial state');
                     const preservedPickNotes = this.state.pickNotes || {};
-                    this.state = { ...this.getInitialState(), pickNotes: preservedPickNotes };
+                    const preservedKeepers = this.state.keepers || {};
+                    this.state = { ...this.getInitialState(), pickNotes: preservedPickNotes, keepers: preservedKeepers };
                 }
 
                 if (!this.state.draftSettings || !this.state.draftSettings.teamCount || !this.state.draftSettings.rounds) {
                     console.warn('DraftStore: Draft settings not properly initialized, resetting to initial state');
                     const preservedPickNotes = this.state.pickNotes || {};
-                    this.state = { ...this.getInitialState(), pickNotes: preservedPickNotes };
+                    const preservedKeepers = this.state.keepers || {};
+                    this.state = { ...this.getInitialState(), pickNotes: preservedPickNotes, keepers: preservedKeepers };
                 }
 
                 console.log('DraftStore: Final state after validation:', {
@@ -1979,10 +1981,11 @@
                         };
 
                         // Debug: Log loaded state before validation
-                        console.log('State before validation:', { 
+                        console.log('🐛 State before validation:', { 
                             keepers: loadedState.keepers, 
                             pickNotes: loadedState.pickNotes 
                         });
+                        console.log('🐛 Raw localStorage data:', JSON.stringify(savedState, null, 2));
 
                         // Ensure keepers are properly aligned with draft board positions
                         this.validateKeepersOnLoad(loadedState);
@@ -2110,10 +2113,11 @@
                     stateToSave.pickNotes = this.state.pickNotes || {};
 
                     // Debug: Log what we're saving
-                    console.log('Saving state to localStorage:', { 
+                    console.log('🐛 Saving state to localStorage:', { 
                         keepers: stateToSave.keepers, 
                         pickNotes: stateToSave.pickNotes 
                     });
+                    console.log('🐛 Full state being saved:', JSON.stringify(stateToSave, null, 2));
 
                     localStorage.setItem('fantasy-draft-state', JSON.stringify(stateToSave));
 
@@ -2529,6 +2533,8 @@
                 const pickKey = `${round}-${teamId}`;
                 const updatedNotes = { ...pickNotes };
 
+                console.log('🐛 Adding pickNote:', { round, teamId, pickKey, note, currentNotes: pickNotes });
+
                 if (!note || note.trim() === '') {
                     // Remove note if empty
                     delete updatedNotes[pickKey];
@@ -2538,6 +2544,8 @@
                     updatedNotes[pickKey] = note.trim();
                     showToast(`Round ${round} note saved`, 'success');
                 }
+
+                console.log('🐛 Updated pickNotes before setState:', updatedNotes);
 
                 this.setState({
                     pickNotes: updatedNotes
