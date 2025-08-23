@@ -1114,8 +1114,7 @@
                 // Load archives from database for persistence across sessions
                 this.loadArchivesFromDatabase();
 
-                // Load pick notes from dedicated database table
-                this.loadNotesFromDatabase();
+                // Note: Pick notes are loaded as part of loadState() for proper timing
             }
 
             getInitialState() {
@@ -1976,7 +1975,7 @@
                             ...this.getInitialState(), // Start with defaults
                             ...savedState, // Override with saved state
                             keepers: keepersToLoad, // Use recovered or saved keepers
-                            pickNotes: savedState.pickNotes || {}, // Ensure pickNotes are loaded
+                            pickNotes: this.loadPickNotesFromLocalStorage(), // Load from separate localStorage key
                             playersData: players,
                             archivedDrafts: archivedDrafts,
                             playersLoading: false,
@@ -2635,11 +2634,11 @@
                         return notes;
                     } else {
                         console.warn('⚠️ Database endpoint not available, loading from localStorage fallback');
-                        return this.loadNotesFromLocalStorage();
+                        return this.loadNotesFromLocalStorageWithStateUpdate();
                     }
                 } catch (error) {
                     console.warn('⚠️ Database not available, loading from localStorage fallback:', error.message);
-                    return this.loadNotesFromLocalStorage();
+                    return this.loadNotesFromLocalStorageWithStateUpdate();
                 }
             }
 
@@ -2648,7 +2647,11 @@
                     const existingNotes = JSON.parse(localStorage.getItem('fantasy-pick-notes') || '{}');
                     existingNotes[pickKey] = noteText;
                     localStorage.setItem('fantasy-pick-notes', JSON.stringify(existingNotes));
-                    console.log('💾 Note saved to localStorage:', { pickKey, noteText });
+                    console.log('💾 Note saved to localStorage:', { pickKey, noteText, allNotes: existingNotes });
+                    
+                    // Verify it was actually saved
+                    const verification = JSON.parse(localStorage.getItem('fantasy-pick-notes') || '{}');
+                    console.log('✅ Verification - localStorage now contains:', verification);
                 } catch (error) {
                     console.error('❌ Error saving note to localStorage:', error);
                 }
@@ -2665,17 +2668,35 @@
                 }
             }
 
-            loadNotesFromLocalStorage() {
+            loadNotesFromLocalStorageWithStateUpdate() {
                 try {
-                    const notes = JSON.parse(localStorage.getItem('fantasy-pick-notes') || '{}');
-                    console.log('📖 Loaded notes from localStorage:', notes);
+                    const rawData = localStorage.getItem('fantasy-pick-notes');
+                    console.log('📖 Raw localStorage data:', rawData);
+                    
+                    const notes = JSON.parse(rawData || '{}');
+                    console.log('📖 Parsed notes from localStorage:', notes);
+                    console.log('📖 Notes count:', Object.keys(notes).length);
                     
                     // Update state with loaded notes
                     this.setState({ pickNotes: notes }, false);
                     
+                    console.log('📖 State updated with notes, current pickNotes:', this.state.pickNotes);
+                    
                     return notes;
                 } catch (error) {
                     console.error('❌ Error loading notes from localStorage:', error);
+                    return {};
+                }
+            }
+
+            loadPickNotesFromLocalStorage() {
+                try {
+                    const rawData = localStorage.getItem('fantasy-pick-notes');
+                    const notes = JSON.parse(rawData || '{}');
+                    console.log('📖 Loading pickNotes for state initialization:', notes);
+                    return notes;
+                } catch (error) {
+                    console.error('❌ Error loading pickNotes for initialization:', error);
                     return {};
                 }
             }
