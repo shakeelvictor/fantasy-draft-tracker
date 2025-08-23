@@ -2680,11 +2680,8 @@
             }
 
             async loadNotesFromDatabase() {
-                // Don't load notes in view-only mode
-                if (this.isViewOnly) {
-                    console.log('👁️ Skipping notes loading - view-only mode');
-                    return {};
-                }
+                // Load notes in all modes for consistent display, editing is restricted separately
+                console.log('📖 Loading notes from database (view-only:', this.isViewOnly, ')');
 
                 try {
                     console.log('📖 Attempting to load notes from database...');
@@ -2770,11 +2767,8 @@
             }
 
             loadPickNotesFromLocalStorage() {
-                // Don't load notes in view-only mode
-                if (this.isViewOnly) {
-                    console.log('👁️ Skipping pickNotes loading - view-only mode');
-                    return {};
-                }
+                // Load notes in all modes for consistent display
+                console.log('📖 Loading pickNotes for state initialization (view-only:', this.isViewOnly, ')')
 
                 try {
                     const rawData = localStorage.getItem('fantasy-pick-notes');
@@ -3674,13 +3668,17 @@
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
             const draftedPick = picks.find(pick => pick.playerId === player.player_id);
             
-            // Get existing note - check both pick-based (for drafted) and player-based (for all players)
+            // Get existing note - support both pick-based (drafted) and player-based (undrafted) notes
             const pickKey = draftedPick ? `${draftedPick.round}-${draftedPick.teamId}` : null;
-            const pickBasedNote = pickKey ? pickNotes[pickKey] : null;
+            const playerKey = `player-${player.player_id}`;
             
-            // For now, use pick-based notes if available, otherwise allow player-based notes
-            // TODO: We'll need to add player-based notes to the state and database
-            const existingNote = pickBasedNote;
+            // Check for notes: pick-based for drafted players, player-based for undrafted
+            const pickBasedNote = pickKey ? pickNotes[pickKey] : null;
+            const playerBasedNote = pickNotes[playerKey];
+            
+            // Use pick-based note for drafted players, player-based for undrafted
+            const existingNote = isDrafted ? pickBasedNote : playerBasedNote;
+            const noteKey = isDrafted ? pickKey : playerKey;
             
             // Debug logging for notes section visibility
             console.log('🔍 Player Modal Notes Debug:', {
@@ -5002,13 +5000,24 @@
                                 </div>
                             )}
 
-                            {/* Notes Section - Available for all players in interactive mode */}
-                            {!actuallyViewOnly && (
+                            {/* Notes Section - Show existing notes in all modes, editing only in interactive mode */}
+                            {(existingNote || !actuallyViewOnly) && (
                                 <div className="glass p-4 rounded-lg border border-slate-500/50 bg-slate-500/10 mt-4">
                                     <div className="text-center">
                                         <h3 className="text-lg font-bold text-slate-400 mb-3">Notes</h3>
                                         
-                                        {!showNoteInput ? (
+                                        {actuallyViewOnly ? (
+                                            /* View-only mode: Show existing note only */
+                                            existingNote && (
+                                                <div className="text-center">
+                                                    <div className="mb-3 p-3 bg-blue-900/20 rounded text-blue-300 text-sm border border-blue-700/50">
+                                                        📝 {existingNote}
+                                                    </div>
+                                                    <p className="text-slate-500 text-xs">View-only mode</p>
+                                                </div>
+                                            )
+                                        ) : !showNoteInput ? (
+                                            /* Interactive mode: Show note with edit button */
                                             <div className="text-center">
                                                 {existingNote && (
                                                     <div className="mb-3 p-3 bg-blue-900/20 rounded text-blue-300 text-sm border border-blue-700/50">
@@ -5374,7 +5383,7 @@
                                                         ${pick && !pick.pending ? 'new-pick' : 'bg-slate-900/30'}
                                                         ${pick?.pending ? 'bg-yellow-900/30 border border-yellow-600/50' : ''}
                                                         ${isCurrentPick ? 'on-clock' : ''}
-                                                        ${!isViewOnly && pickNote ? 'bg-blue-900/20 border border-blue-500/50' : ''}
+                                                        ${pickNote ? 'bg-blue-900/20 border border-blue-500/50' : ''}
                                                         flex flex-col justify-center relative cursor-pointer
                                                         hover:ring-2 hover:ring-yellow-400/50 transition-all duration-200
                                                     `}
@@ -5385,9 +5394,9 @@
                                                         }
                                                     }}
                                                     title={pick && playerInfo ? 
-                                                        `${playerInfo.name}${!isViewOnly && pickNote ? ` (Note: ${pickNote})` : ''}${!isViewOnly ? ' - Click to add/edit note' : ''}` : 
-                                                        !isViewOnly && pickNote ? 
-                                                            `${pickNote} - Click to edit note` :
+                                                        `${playerInfo.name}${pickNote ? ` (Note: ${pickNote})` : ''}${!isViewOnly ? ' - Click to add/edit note' : ''}` : 
+                                                        pickNote ? 
+                                                            `${pickNote}${!isViewOnly ? ' - Click to edit note' : ''}` :
                                                             !isViewOnly ? `Click to add a note for this Round ${round} pick` : `Round ${round} pick`
                                                     }
                                                 >
@@ -5399,7 +5408,7 @@
                                                                     K
                                                                 </span>
                                                             )}
-                                                            {!isViewOnly && pickNote && (
+                                                            {pickNote && (
                                                                 <span className="bg-blue-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Note: ${pickNote}`}>
                                                                     📝
                                                                 </span>
@@ -5432,7 +5441,7 @@
                                                                     {pick.pending && (
                                                                         <span className="text-yellow-400 text-[8px] ml-1">(KEEPER)</span>
                                                                     )}
-                                                                    {!isViewOnly && pickNote && (
+                                                                    {pickNote && (
                                                                         <div className="text-blue-400 text-[8px] font-bold mt-1">
                                                                             📝 {pickNote}
                                                                         </div>
@@ -5457,7 +5466,7 @@
                                                                 <div className="animate-pulse font-semibold text-blue-400 text-[10px] sm:text-xs">
                                                                     ON CLOCK
                                                                 </div>
-                                                            ) : !isViewOnly && pickNote ? (
+                                                            ) : pickNote ? (
                                                                 <div className="text-blue-400 text-[9px] sm:text-[10px] font-medium">
                                                                     <div>📝 {pickNote}</div>
                                                                 </div>
