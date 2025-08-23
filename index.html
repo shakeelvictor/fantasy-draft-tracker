@@ -1113,6 +1113,9 @@
 
                 // Load archives from database for persistence across sessions
                 this.loadArchivesFromDatabase();
+
+                // Load pick notes from dedicated database table
+                this.loadNotesFromDatabase();
             }
 
             getInitialState() {
@@ -1406,11 +1409,9 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        console.log(`🔍 PICK NOTES DEBUG - Loaded database state:`, {
+                        console.log(`✅ ${mode} Loaded database state:`, {
                             picks: data.state?.picks?.length || 0,
                             keepers: Object.keys(data.state?.keepers || {}).length,
-                            pickNotes: data.state?.pickNotes,
-                            pickNotesCount: Object.keys(data.state?.pickNotes || {}).length,
                             teams: data.state?.teams?.length || 0,
                             timestamp: new Date(data.timestamp).toLocaleTimeString()
                         });
@@ -1440,10 +1441,6 @@
                             lastUpdate: data.timestamp
                         };
 
-                        console.log('🔍 PICK NOTES DEBUG - Final merged state:', {
-                            pickNotes: this.state.pickNotes,
-                            pickNotesCount: Object.keys(this.state.pickNotes || {}).length
-                        });
 
                         // Rebuild history if we have picks but no history (for undo functionality)
                         if (!this.isViewOnly && this.state.picks && this.state.picks.length > 0 && (!this.state.history || this.state.history.length === 0)) {
@@ -1793,7 +1790,6 @@
                             picks: this.state.picks,
                             currentPick: this.state.currentPick,
                             keepers: this.state.keepers,
-                            pickNotes: this.state.pickNotes,
                             teams: this.state.teams,
                             draftSettings: this.state.draftSettings,
                             recentPick: this.state.recentPick,
@@ -1801,11 +1797,9 @@
                         }
                     };
 
-                    console.log('🔍 PICK NOTES DEBUG - Broadcasting shared data:', {
+                    console.log('💾 Saving to localStorage:', {
                         timestamp: sharedData.timestamp,
-                        picks: sharedData.state.picks.length,
-                        pickNotes: sharedData.state.pickNotes,
-                        pickNotesCount: Object.keys(sharedData.state.pickNotes || {}).length
+                        picks: sharedData.state.picks.length
                     });
                     localStorage.setItem('fantasy-draft-shared', JSON.stringify(sharedData));
 
@@ -2138,7 +2132,6 @@
                             teams: this.state.teams,
                             draftSettings: this.state.draftSettings,
                             keepers: this.state.keepers,
-                            pickNotes: this.state.pickNotes,
                             draftJustCompleted: this.state.draftJustCompleted
                         }
                     };
@@ -2553,23 +2546,98 @@
                     showToast(`Round ${round} note saved`, 'success');
                 }
 
-                console.log('🔍 PICK NOTES DEBUG - Before setState:', {
-                    pickKey,
-                    note: note?.trim(),
-                    updatedNotes,
-                    currentPickNotes: this.state.pickNotes
-                });
-
+                // Update local state immediately for UI responsiveness
                 this.setState({
                     pickNotes: updatedNotes
-                }, true);
+                }, false); // Don't broadcast - we'll save directly to database
 
-                console.log('🔍 PICK NOTES DEBUG - After setState:', {
-                    pickNotes: this.state.pickNotes,
-                    willBroadcast: true
-                });
+                // Save note to dedicated database table
+                if (isDeleting) {
+                    this.deleteNoteFromDatabase(pickKey);
+                } else {
+                    this.saveNoteToDatabase(pickKey, note.trim());
+                }
             }
 
+            async saveNoteToDatabase(pickKey, noteText) {
+                try {
+                    console.log('📝 Saving note to dedicated database table:', { pickKey, noteText });
+                    
+                    const response = await fetch('/api/notes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            pickKey,
+                            note: noteText,
+                            timestamp: Date.now()
+                        })
+                    });
+
+                    if (response.ok) {
+                        console.log('✅ Note saved to database successfully');
+                    } else {
+                        console.error('❌ Failed to save note to database:', response.status);
+                        showToast('Failed to save note to database', 'error');
+                    }
+                } catch (error) {
+                    console.error('❌ Error saving note to database:', error);
+                    showToast('Error saving note', 'error');
+                }
+            }
+
+            async deleteNoteFromDatabase(pickKey) {
+                try {
+                    console.log('🗑️ Deleting note from database:', pickKey);
+                    
+                    const response = await fetch(`/api/notes/${encodeURIComponent(pickKey)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        console.log('✅ Note deleted from database successfully');
+                    } else {
+                        console.error('❌ Failed to delete note from database:', response.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Error deleting note from database:', error);
+                }
+            }
+
+            async loadNotesFromDatabase() {
+                try {
+                    console.log('📖 Loading notes from dedicated database table...');
+                    
+                    const response = await fetch('/api/notes', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const notes = data.notes || {};
+                        
+                        console.log('✅ Loaded notes from database:', notes);
+                        
+                        // Update state with loaded notes
+                        this.setState({ pickNotes: notes }, false);
+                        
+                        return notes;
+                    } else {
+                        console.error('❌ Failed to load notes from database:', response.status);
+                        return {};
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading notes from database:', error);
+                    return {};
+                }
+            }
 
             tradePlayer(playerId, fromTeamId, toTeamId) {
                 if (this.isViewOnly) {
