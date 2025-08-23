@@ -1140,7 +1140,7 @@
                     },
                     keepers: {},
                     trades: [],
-                    pickAssignments: {}, // Track which team owns each pick position: "round-originalTeam" -> "assignedTeam"
+                    pickNotes: {}, // Track notes for pick positions: "round-teamId" -> "note text"
                     history: [],
                     currentHistoryIndex: -1,
                     playersData: {},
@@ -1963,12 +1963,12 @@
                             }
                         }
 
-                        // FIX 1: Ensure keepers and pickAssignments are properly loaded and persisted
+                        // FIX 1: Ensure keepers and pickNotes are properly loaded and persisted
                         const loadedState = {
                             ...this.getInitialState(), // Start with defaults
                             ...savedState, // Override with saved state
                             keepers: keepersToLoad, // Use recovered or saved keepers
-                            pickAssignments: savedState.pickAssignments || {}, // Ensure pickAssignments are loaded
+                            pickNotes: savedState.pickNotes || {}, // Ensure pickNotes are loaded
                             playersData: players,
                             archivedDrafts: archivedDrafts,
                             playersLoading: false,
@@ -1979,7 +1979,7 @@
                         // Debug: Log loaded state before validation
                         console.log('State before validation:', { 
                             keepers: loadedState.keepers, 
-                            pickAssignments: loadedState.pickAssignments 
+                            pickNotes: loadedState.pickNotes 
                         });
 
                         // Ensure keepers are properly aligned with draft board positions
@@ -1988,7 +1988,7 @@
                         // Debug: Log loaded state after validation
                         console.log('State after validation:', { 
                             keepers: loadedState.keepers,
-                            pickAssignments: loadedState.pickAssignments
+                            pickNotes: loadedState.pickNotes
                         });
 
                         // Rebuild history if we have picks but no history (for undo functionality)
@@ -2103,14 +2103,14 @@
                     // Add timestamp for synchronization
                     stateToSave.lastUpdate = Date.now();
 
-                    // FIX 1: Explicitly include keepers in save with validation
+                    // FIX 1: Explicitly include keepers and pickNotes in save with validation
                     stateToSave.keepers = this.state.keepers || {};
-                    stateToSave.pickAssignments = this.state.pickAssignments || {};
+                    stateToSave.pickNotes = this.state.pickNotes || {};
 
                     // Debug: Log what we're saving
                     console.log('Saving state to localStorage:', { 
                         keepers: stateToSave.keepers, 
-                        pickAssignments: stateToSave.pickAssignments 
+                        pickNotes: stateToSave.pickNotes 
                     });
 
                     localStorage.setItem('fantasy-draft-state', JSON.stringify(stateToSave));
@@ -2124,7 +2124,7 @@
                             teams: this.state.teams,
                             draftSettings: this.state.draftSettings,
                             keepers: this.state.keepers,
-                            pickAssignments: this.state.pickAssignments,
+                            pickNotes: this.state.pickNotes,
                             draftJustCompleted: this.state.draftJustCompleted
                         }
                     };
@@ -2361,7 +2361,7 @@
                     return;
                 }
 
-                const { picks, currentPick, history, currentHistoryIndex, draftSettings, playersData, teams, keepers, pickAssignments } = this.state;
+                const { picks, currentPick, history, currentHistoryIndex, draftSettings, playersData, teams, keepers } = this.state;
 
                 // Check if this round/team already has a keeper
                 const keeperKey = `${teamId}-${currentPick.round}`;
@@ -2379,15 +2379,9 @@
                     return;
                 }
 
-                // Check if this pick has been assigned to another team
-                const pickKey = `${currentPick.round}-${currentPick.teamId}`;
-                const assignedTeamId = pickAssignments[pickKey];
-                const actualTeamId = assignedTeamId || teamId;
-
                 const newPick = {
                     playerId,
-                    teamId: actualTeamId,
-                    originalTeamId: assignedTeamId ? currentPick.teamId : undefined, // Track original team if assigned elsewhere
+                    teamId,
                     round: currentPick.round,
                     pickNumber: currentPick.pickNumber,
                     pickInRound: currentPick.pickInRound,
@@ -2523,36 +2517,28 @@
                 }
             }
 
-            assignPickToTeam(round, originalTeamId, assignedTeamId) {
+            addPickNote(round, teamId, note) {
                 if (this.isViewOnly) {
-                    showToast('View-only mode - cannot assign picks', 'error');
+                    showToast('View-only mode - cannot add notes', 'error');
                     return;
                 }
 
-                const { teams, pickAssignments } = this.state;
-                
-                // Find the assigned team
-                const assignedTeam = teams.find(team => team.id === assignedTeamId);
-                if (!assignedTeam) {
-                    showToast('Invalid team selected', 'error');
-                    return;
-                }
+                const { pickNotes } = this.state;
+                const pickKey = `${round}-${teamId}`;
+                const updatedNotes = { ...pickNotes };
 
-                const pickKey = `${round}-${originalTeamId}`;
-                const updatedAssignments = { ...pickAssignments };
-
-                if (assignedTeamId === originalTeamId) {
-                    // Assigning back to original team - remove the assignment
-                    delete updatedAssignments[pickKey];
-                    showToast(`Round ${round} pick returned to original team`, 'success');
+                if (!note || note.trim() === '') {
+                    // Remove note if empty
+                    delete updatedNotes[pickKey];
+                    showToast(`Round ${round} note removed`, 'success');
                 } else {
-                    // Assign to different team
-                    updatedAssignments[pickKey] = assignedTeamId;
-                    showToast(`Round ${round} pick assigned to ${assignedTeam.name}`, 'success');
+                    // Add or update note
+                    updatedNotes[pickKey] = note.trim();
+                    showToast(`Round ${round} note saved`, 'success');
                 }
 
                 this.setState({
-                    pickAssignments: updatedAssignments
+                    pickNotes: updatedNotes
                 }, true);
             }
 
@@ -3109,7 +3095,7 @@
                 setViewOnlyMode: (isViewOnly) => draftStore.setViewOnlyMode(isViewOnly),
                 resetDraft: () => draftStore.resetDraft(),
                 deleteArchivedDraft: (draftId) => draftStore.deleteArchivedDraft(draftId),
-                assignPickToTeam: (round, originalTeamId, assignedTeamId) => draftStore.assignPickToTeam(round, originalTeamId, assignedTeamId),
+                addPickNote: (round, teamId, note) => draftStore.addPickNote(round, teamId, note),
                 tradePlayer: (playerId, fromTeamId, toTeamId) => draftStore.tradePlayer(playerId, fromTeamId, toTeamId)
             };
         }
@@ -3380,6 +3366,8 @@
             const [error, setError] = useState(null);
             const [closing, setClosing] = useState(false);
             const [showTradeOptions, setShowTradeOptions] = useState(false);
+            const [showNoteInput, setShowNoteInput] = useState(false);
+            const [noteText, setNoteText] = useState('');
 
             // Simple cache for player data to speed up repeated views
             const playerDataCache = React.useRef(new Map());
@@ -3391,7 +3379,9 @@
                 playersData,
                 keepers,
                 teams,
-                tradePlayer
+                tradePlayer,
+                pickNotes,
+                addPickNote
             } = useDraftStore();
 
             // Check if we're in view-only mode
@@ -3399,6 +3389,18 @@
 
             // Check if this player is already drafted
             const isDrafted = picks.some(pick => pick.playerId === player.player_id);
+            const draftedPick = picks.find(pick => pick.playerId === player.player_id);
+            
+            // Get existing note for this pick
+            const pickKey = draftedPick ? `${draftedPick.round}-${draftedPick.teamId}` : null;
+            const existingNote = pickKey ? pickNotes[pickKey] : null;
+            
+            // Initialize note text with existing note
+            React.useEffect(() => {
+                if (existingNote && !noteText) {
+                    setNoteText(existingNote);
+                }
+            }, [existingNote]);
 
             // Check if player is a keeper (simple check - if player ID exists in keepers object values)
             const isKeeper = Object.values(keepers || {}).includes(player.player_id);
@@ -4751,6 +4753,68 @@
                                                 )}
                                             </div>
                                         )}
+                                        
+                                        {/* Notes Section */}
+                                        <div className="mt-4 border-t border-slate-600 pt-4">
+                                            {!showNoteInput ? (
+                                                <div className="text-center">
+                                                    {existingNote && (
+                                                        <div className="mb-2 p-2 bg-blue-900/20 rounded text-blue-300 text-sm">
+                                                            📝 {existingNote}
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setShowNoteInput(true)}
+                                                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium rounded-lg transition-all transform hover:scale-105 shadow-lg text-sm"
+                                                    >
+                                                        {existingNote ? 'Edit Note' : 'Add Note'}
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <textarea
+                                                        value={noteText}
+                                                        onChange={(e) => setNoteText(e.target.value)}
+                                                        placeholder="e.g., 'Belongs to Team B', 'Traded pick', etc."
+                                                        className="w-full p-3 glass rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none text-sm"
+                                                        rows={2}
+                                                        maxLength={100}
+                                                    />
+                                                    <div className="flex space-x-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowNoteInput(false);
+                                                                setNoteText(existingNote || '');
+                                                            }}
+                                                            className="flex-1 px-3 py-2 glass hover:bg-slate-600 text-white rounded-lg transition-all text-sm"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        {existingNote && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (pickKey) addPickNote(draftedPick.round, draftedPick.teamId, '');
+                                                                    setNoteText('');
+                                                                    setShowNoteInput(false);
+                                                                }}
+                                                                className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all text-sm"
+                                                            >
+                                                                Clear
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => {
+                                                                if (pickKey) addPickNote(draftedPick.round, draftedPick.teamId, noteText);
+                                                                setShowNoteInput(false);
+                                                            }}
+                                                            className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg transition-all text-sm"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -4887,7 +4951,7 @@
                 currentPick,
                 showPlayerPanel,
                 keepers,
-                pickAssignments
+                pickNotes
             } = useDraftStore();
 
             // Debug: Log keepers in DraftBoard component
@@ -4914,17 +4978,10 @@
             const safeDraftSettings = draftSettings || { teamCount: 11, rounds: 20 };
 
             const getPickForTeamAndRound = (teamId, round) => {
-                // Find any pick that was made in this draft position (team column + round)
-                // Show it in the column where the pick was originally supposed to happen
-                const pick = picks.find(pick => {
-                    // If this pick has originalTeamId, it means it was assigned elsewhere
-                    // Show it in the original team's column
-                    if (pick.originalTeamId) {
-                        return pick.originalTeamId === teamId && pick.round === round;
-                    }
-                    // Normal case - pick belongs to the team that made it
-                    return pick.teamId === teamId && pick.round === round;
-                });
+                // Simply find the pick for this team and round
+                const pick = picks.find(pick => 
+                    pick.teamId === teamId && pick.round === round
+                );
 
                 if (pick) return pick;
 
@@ -5044,13 +5101,9 @@
                                                 currentPick.teamId === team.id &&
                                                 currentPick.round === round;
 
-                                            // Check if this is an assigned pick slot
+                                            // Check if this pick has a note
                                             const pickKey = `${round}-${team.id}`;
-                                            const assignedTeamId = pickAssignments[pickKey];
-                                            const isAssignedAway = !!assignedTeamId;
-                                            const assignedTeam = isAssignedAway ? safeTeams.find(t => t.id === assignedTeamId) : null;
-
-                                            // This complex logic is not needed - keep the display simple
+                                            const pickNote = pickNotes[pickKey];
 
                                             return (
                                                 <div
@@ -5061,7 +5114,7 @@
                                                         ${pick && !pick.pending ? 'new-pick' : 'bg-slate-900/30'}
                                                         ${pick?.pending ? 'bg-yellow-900/30 border border-yellow-600/50' : ''}
                                                         ${isCurrentPick ? 'on-clock' : ''}
-                                                        ${isAssignedAway ? 'bg-orange-900/20 border border-orange-500/50' : ''}
+                                                        ${pickNote ? 'bg-blue-900/20 border border-blue-500/50' : ''}
                                                         flex flex-col justify-center relative cursor-pointer
                                                         hover:ring-2 hover:ring-yellow-400/50 transition-all duration-200
                                                     `}
@@ -5072,10 +5125,10 @@
                                                         }
                                                     }}
                                                     title={pick && playerInfo ? 
-                                                        `${playerInfo.name}${pick.originalTeamId ? ` (Originally: ${safeTeams.find(t => t.id === pick.originalTeamId)?.name || 'Unknown'})` : ''} - Click to reassign` : 
-                                                        isAssignedAway ? 
-                                                            `Round ${round} pick assigned to ${assignedTeam?.name} - Click to reassign` :
-                                                            `Click to assign this Round ${round} pick to another team`
+                                                        `${playerInfo.name}${pickNote ? ` (Note: ${pickNote})` : ''} - Click to add/edit note` : 
+                                                        pickNote ? 
+                                                            `${pickNote} - Click to edit note` :
+                                                            `Click to add a note for this Round ${round} pick`
                                                     }
                                                 >
                                                     <div className="text-slate-400 text-[9px] sm:text-[10px] mb-1 font-semibold flex items-center justify-between">
@@ -5086,18 +5139,13 @@
                                                                     K
                                                                 </span>
                                                             )}
-                                                            {pick?.originalTeamId && (
-                                                                <span className="bg-orange-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Originally: ${safeTeams.find(t => t.id === pick.originalTeamId)?.name}`}>
-                                                                    ↗
+                                                            {pickNote && (
+                                                                <span className="bg-blue-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Note: ${pickNote}`}>
+                                                                    📝
                                                                 </span>
                                                             )}
-                                                            {isAssignedAway && !pick && (
-                                                                <span className="bg-orange-600 text-white px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold" title={`Pick assigned to ${assignedTeam?.name}`}>
-                                                                    →
-                                                                </span>
-                                                            )}
-                                                            <span className="text-yellow-400/60 hover:text-yellow-400 transition-colors text-[8px] sm:text-[9px]" title="Click to assign">
-                                                                ⚙
+                                                            <span className="text-yellow-400/60 hover:text-yellow-400 transition-colors text-[8px] sm:text-[9px]" title="Click to add note">
+                                                                📝
                                                             </span>
                                                         </div>
                                                     </div>
@@ -5127,9 +5175,9 @@
                                                                     {pick.pending && (
                                                                         <span className="text-yellow-400 text-[8px] ml-1">(KEEPER)</span>
                                                                     )}
-                                                                    {pick.originalTeamId && (
-                                                                        <div className="text-orange-400 text-[8px] font-bold mt-1">
-                                                                            → Belongs to {safeTeams.find(t => t.id === pick.teamId)?.name || 'Other Team'}
+                                                                    {pickNote && (
+                                                                        <div className="text-blue-400 text-[8px] font-bold mt-1">
+                                                                            📝 {pickNote}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -5152,10 +5200,9 @@
                                                                 <div className="animate-pulse font-semibold text-blue-400 text-[10px] sm:text-xs">
                                                                     ON CLOCK
                                                                 </div>
-                                                            ) : isAssignedAway ? (
-                                                                <div className="text-orange-400 text-[9px] sm:text-[10px] font-medium">
-                                                                    <div>Will go to</div>
-                                                                    <div className="text-slate-400 text-[8px]">{assignedTeam?.name}</div>
+                                                            ) : pickNote ? (
+                                                                <div className="text-blue-400 text-[9px] sm:text-[10px] font-medium">
+                                                                    <div>📝 {pickNote}</div>
                                                                 </div>
                                                             ) : (
                                                                 '---'
@@ -6100,23 +6147,35 @@
             );
         };
 
-        // Team Selection Modal for Pick Assignment
-        const TeamSelectionModal = ({ onClose, fromTeamId, round, existingPick }) => {
-            const { teams, assignPickToTeam, pickAssignments } = useDraftStore();
+        // Pick Note Modal
+        const PickNoteModal = ({ onClose, teamId, round, existingPick }) => {
+            const { teams, addPickNote, pickNotes } = useDraftStore();
             const [closing, setClosing] = useState(false);
+            const [note, setNote] = useState('');
             
-            const currentTeam = teams.find(team => team.id === fromTeamId);
-            const pickKey = `${round}-${fromTeamId}`;
-            const currentlyAssignedTeamId = pickAssignments[pickKey];
-            const currentlyAssignedTeam = currentlyAssignedTeamId ? teams.find(t => t.id === currentlyAssignedTeamId) : null;
+            const currentTeam = teams.find(team => team.id === teamId);
+            const pickKey = `${round}-${teamId}`;
+            const existingNote = pickNotes[pickKey];
+
+            // Initialize with existing note
+            React.useEffect(() => {
+                if (existingNote) {
+                    setNote(existingNote);
+                }
+            }, [existingNote]);
 
             const handleClose = () => {
                 setClosing(true);
                 setTimeout(onClose, 300);
             };
 
-            const handleTeamSelect = (toTeamId) => {
-                assignPickToTeam(round, fromTeamId, toTeamId);
+            const handleSave = () => {
+                addPickNote(round, teamId, note);
+                handleClose();
+            };
+
+            const handleClear = () => {
+                addPickNote(round, teamId, '');
                 handleClose();
             };
 
@@ -6124,67 +6183,37 @@
                 <div className={`fixed inset-0 modal-backdrop flex items-center justify-center z-[70] p-4 ${closing ? 'closing' : ''}`}>
                     <div className={`glass-dark rounded-xl p-4 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl ${closing ? 'modal-exit' : 'modal-enter'}`}>
                         <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
-                            Assign Pick
+                            Pick Note
                         </h2>
                         
                         <div className="text-center mb-6">
                             <div className="text-slate-300 mb-2">
                                 {existingPick ? (
-                                    <>Reassign this drafted player</>
+                                    <>Add a note for this drafted player</>
                                 ) : (
-                                    <>Assign this pick position</>
+                                    <>Add a note for this pick position</>
                                 )}
                             </div>
                             <div className="text-lg font-semibold text-white">
                                 Round {round} • {currentTeam?.name}
                             </div>
-                            {currentlyAssignedTeam && (
-                                <div className="text-orange-400 text-sm mt-1">
-                                    Currently assigned to: <strong>{currentlyAssignedTeam.name}</strong>
-                                </div>
-                            )}
                             <div className="text-slate-400 text-sm mt-1">
-                                Select which team should own this pick
+                                e.g., "Belongs to Team B", "Traded pick", etc.
                             </div>
                         </div>
 
-                        <div className="space-y-3 mb-6">
-                            {teams.map(team => {
-                                const isOriginalTeam = team.id === fromTeamId;
-                                const isCurrentlyAssigned = team.id === currentlyAssignedTeamId;
-                                
-                                return (
-                                    <button
-                                        key={team.id}
-                                        onClick={() => handleTeamSelect(team.id)}
-                                        className={`w-full p-4 glass rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
-                                            isCurrentlyAssigned ? 'ring-2 ring-orange-400' : 'hover:bg-slate-600/50'
-                                        }`}
-                                        style={{
-                                            background: `linear-gradient(135deg, ${team.color}20, ${team.color}10)`,
-                                            border: `1px solid ${team.color}40`
-                                        }}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-3">
-                                                <div
-                                                    className="w-4 h-4 rounded-full"
-                                                    style={{ backgroundColor: team.color }}
-                                                />
-                                                <span className="font-semibold text-white text-lg">{team.name}</span>
-                                            </div>
-                                            <div className="flex flex-col items-end">
-                                                {isOriginalTeam && (
-                                                    <span className="text-blue-400 text-xs font-bold">ORIGINAL</span>
-                                                )}
-                                                {isCurrentlyAssigned && (
-                                                    <span className="text-orange-400 text-xs font-bold">CURRENT</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                        <div className="mb-6">
+                            <textarea
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                placeholder="Enter note..."
+                                className="w-full p-3 glass rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none resize-none"
+                                rows={3}
+                                maxLength={100}
+                            />
+                            <div className="text-slate-400 text-xs mt-1 text-right">
+                                {note.length}/100 characters
+                            </div>
                         </div>
 
                         <div className="flex space-x-3">
@@ -6193,6 +6222,20 @@
                                 className="flex-1 px-4 py-3 glass hover:bg-slate-600 text-white rounded-lg transition-all font-medium"
                             >
                                 Cancel
+                            </button>
+                            {existingNote && (
+                                <button
+                                    onClick={handleClear}
+                                    className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all font-medium"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                            <button
+                                onClick={handleSave}
+                                className="flex-1 px-4 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white rounded-lg transition-all font-medium"
+                            >
+                                Save
                             </button>
                         </div>
                     </div>
@@ -6526,8 +6569,8 @@
             const [highlightedTeam, setHighlightedTeam] = useState(null);
             const [showFantasyProModal, setShowFantasyProModal] = useState(false);
             const [selectedPlayerForModal, setSelectedPlayerForModal] = useState(null);
-            const [showTeamSelectionModal, setShowTeamSelectionModal] = useState(false);
-            const [selectedPickForTransfer, setSelectedPickForTransfer] = useState(null);
+            const [showPickNoteModal, setShowPickNoteModal] = useState(false);
+            const [selectedPickForNote, setSelectedPickForNote] = useState(null);
 
             // Load players on mount
             useEffect(() => {
@@ -6589,13 +6632,13 @@
                     return;
                 }
                 
-                setSelectedPickForTransfer({ teamId, round, pick });
-                setShowTeamSelectionModal(true);
+                setSelectedPickForNote({ teamId, round, pick });
+                setShowPickNoteModal(true);
             };
 
-            const handleTeamSelectionModalClose = () => {
-                setShowTeamSelectionModal(false);
-                setSelectedPickForTransfer(null);
+            const handlePickNoteModalClose = () => {
+                setShowPickNoteModal(false);
+                setSelectedPickForNote(null);
             };
 
             // Expose modal close function globally for debugging
@@ -6684,12 +6727,12 @@
                             />
                         )}
 
-                        {showTeamSelectionModal && selectedPickForTransfer && (
-                            <TeamSelectionModal
-                                onClose={handleTeamSelectionModalClose}
-                                fromTeamId={selectedPickForTransfer.teamId}
-                                round={selectedPickForTransfer.round}
-                                existingPick={selectedPickForTransfer.pick}
+                        {showPickNoteModal && selectedPickForNote && (
+                            <PickNoteModal
+                                onClose={handlePickNoteModalClose}
+                                teamId={selectedPickForNote.teamId}
+                                round={selectedPickForNote.round}
+                                existingPick={selectedPickForNote.pick}
                             />
                         )}
                     </div>
