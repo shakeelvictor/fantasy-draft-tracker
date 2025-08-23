@@ -1963,11 +1963,12 @@
                             }
                         }
 
-                        // FIX 1: Ensure keepers are properly loaded and persisted
+                        // FIX 1: Ensure keepers and pickAssignments are properly loaded and persisted
                         const loadedState = {
                             ...this.getInitialState(), // Start with defaults
                             ...savedState, // Override with saved state
                             keepers: keepersToLoad, // Use recovered or saved keepers
+                            pickAssignments: savedState.pickAssignments || {}, // Ensure pickAssignments are loaded
                             playersData: players,
                             archivedDrafts: archivedDrafts,
                             playersLoading: false,
@@ -1976,13 +1977,19 @@
                         };
 
                         // Debug: Log loaded state before validation
-                        console.log('State before validation:', { keepers: loadedState.keepers });
+                        console.log('State before validation:', { 
+                            keepers: loadedState.keepers, 
+                            pickAssignments: loadedState.pickAssignments 
+                        });
 
                         // Ensure keepers are properly aligned with draft board positions
                         this.validateKeepersOnLoad(loadedState);
 
                         // Debug: Log loaded state after validation
-                        console.log('State after validation:', { keepers: loadedState.keepers });
+                        console.log('State after validation:', { 
+                            keepers: loadedState.keepers,
+                            pickAssignments: loadedState.pickAssignments
+                        });
 
                         // Rebuild history if we have picks but no history (for undo functionality)
                         if (loadedState.picks && loadedState.picks.length > 0 && (!loadedState.history || loadedState.history.length === 0)) {
@@ -2098,9 +2105,13 @@
 
                     // FIX 1: Explicitly include keepers in save with validation
                     stateToSave.keepers = this.state.keepers || {};
+                    stateToSave.pickAssignments = this.state.pickAssignments || {};
 
                     // Debug: Log what we're saving
-                    console.log('Saving state to localStorage:', { keepers: stateToSave.keepers });
+                    console.log('Saving state to localStorage:', { 
+                        keepers: stateToSave.keepers, 
+                        pickAssignments: stateToSave.pickAssignments 
+                    });
 
                     localStorage.setItem('fantasy-draft-state', JSON.stringify(stateToSave));
 
@@ -2113,6 +2124,7 @@
                             teams: this.state.teams,
                             draftSettings: this.state.draftSettings,
                             keepers: this.state.keepers,
+                            pickAssignments: this.state.pickAssignments,
                             draftJustCompleted: this.state.draftJustCompleted
                         }
                     };
@@ -2375,7 +2387,7 @@
                 const newPick = {
                     playerId,
                     teamId: actualTeamId,
-                    originalTeamId: teamId !== actualTeamId ? teamId : undefined, // Track original team if assigned elsewhere
+                    originalTeamId: assignedTeamId ? currentPick.teamId : undefined, // Track original team if assigned elsewhere
                     round: currentPick.round,
                     pickNumber: currentPick.pickNumber,
                     pickInRound: currentPick.pickInRound,
@@ -6090,10 +6102,13 @@
 
         // Team Selection Modal for Pick Assignment
         const TeamSelectionModal = ({ onClose, fromTeamId, round, existingPick }) => {
-            const { teams, assignPickToTeam } = useDraftStore();
+            const { teams, assignPickToTeam, pickAssignments } = useDraftStore();
             const [closing, setClosing] = useState(false);
             
             const currentTeam = teams.find(team => team.id === fromTeamId);
+            const pickKey = `${round}-${fromTeamId}`;
+            const currentlyAssignedTeamId = pickAssignments[pickKey];
+            const currentlyAssignedTeam = currentlyAssignedTeamId ? teams.find(t => t.id === currentlyAssignedTeamId) : null;
 
             const handleClose = () => {
                 setClosing(true);
@@ -6123,31 +6138,53 @@
                             <div className="text-lg font-semibold text-white">
                                 Round {round} • {currentTeam?.name}
                             </div>
+                            {currentlyAssignedTeam && (
+                                <div className="text-orange-400 text-sm mt-1">
+                                    Currently assigned to: <strong>{currentlyAssignedTeam.name}</strong>
+                                </div>
+                            )}
                             <div className="text-slate-400 text-sm mt-1">
                                 Select which team should own this pick
                             </div>
                         </div>
 
                         <div className="space-y-3 mb-6">
-                            {teams.map(team => (
-                                <button
-                                    key={team.id}
-                                    onClick={() => handleTeamSelect(team.id)}
-                                    className="w-full p-4 glass rounded-lg hover:bg-slate-600/50 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${team.color}20, ${team.color}10)`,
-                                        border: `1px solid ${team.color}40`
-                                    }}
-                                >
-                                    <div className="flex items-center justify-center space-x-3">
-                                        <div
-                                            className="w-4 h-4 rounded-full"
-                                            style={{ backgroundColor: team.color }}
-                                        />
-                                        <span className="font-semibold text-white text-lg">{team.name}</span>
-                                    </div>
-                                </button>
-                            ))}
+                            {teams.map(team => {
+                                const isOriginalTeam = team.id === fromTeamId;
+                                const isCurrentlyAssigned = team.id === currentlyAssignedTeamId;
+                                
+                                return (
+                                    <button
+                                        key={team.id}
+                                        onClick={() => handleTeamSelect(team.id)}
+                                        className={`w-full p-4 glass rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
+                                            isCurrentlyAssigned ? 'ring-2 ring-orange-400' : 'hover:bg-slate-600/50'
+                                        }`}
+                                        style={{
+                                            background: `linear-gradient(135deg, ${team.color}20, ${team.color}10)`,
+                                            border: `1px solid ${team.color}40`
+                                        }}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-3">
+                                                <div
+                                                    className="w-4 h-4 rounded-full"
+                                                    style={{ backgroundColor: team.color }}
+                                                />
+                                                <span className="font-semibold text-white text-lg">{team.name}</span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                                {isOriginalTeam && (
+                                                    <span className="text-blue-400 text-xs font-bold">ORIGINAL</span>
+                                                )}
+                                                {isCurrentlyAssigned && (
+                                                    <span className="text-orange-400 text-xs font-bold">CURRENT</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         <div className="flex space-x-3">
