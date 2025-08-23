@@ -1113,6 +1113,9 @@
 
                 // Load archives from database for persistence across sessions
                 this.loadArchivesFromDatabase();
+
+                // Load pick notes from database for proper persistence
+                this.loadPickNotesFromDatabase();
             }
 
             getInitialState() {
@@ -1981,11 +1984,10 @@
                         };
 
                         // Debug: Log loaded state before validation
-                        console.log('🐛 State before validation:', { 
+                        console.log('State before validation:', { 
                             keepers: loadedState.keepers, 
                             pickNotes: loadedState.pickNotes 
                         });
-                        console.log('🐛 Raw localStorage data:', JSON.stringify(savedState, null, 2));
 
                         // Ensure keepers are properly aligned with draft board positions
                         this.validateKeepersOnLoad(loadedState);
@@ -2113,11 +2115,10 @@
                     stateToSave.pickNotes = this.state.pickNotes || {};
 
                     // Debug: Log what we're saving
-                    console.log('🐛 Saving state to localStorage:', { 
+                    console.log('Saving state to localStorage:', { 
                         keepers: stateToSave.keepers, 
                         pickNotes: stateToSave.pickNotes 
                     });
-                    console.log('🐛 Full state being saved:', JSON.stringify(stateToSave, null, 2));
 
                     localStorage.setItem('fantasy-draft-state', JSON.stringify(stateToSave));
 
@@ -2533,9 +2534,9 @@
                 const pickKey = `${round}-${teamId}`;
                 const updatedNotes = { ...pickNotes };
 
-                console.log('🐛 Adding pickNote:', { round, teamId, pickKey, note, currentNotes: pickNotes });
+                const isDeleting = !note || note.trim() === '';
 
-                if (!note || note.trim() === '') {
+                if (isDeleting) {
                     // Remove note if empty
                     delete updatedNotes[pickKey];
                     showToast(`Round ${round} note removed`, 'success');
@@ -2545,11 +2546,93 @@
                     showToast(`Round ${round} note saved`, 'success');
                 }
 
-                console.log('🐛 Updated pickNotes before setState:', updatedNotes);
-
                 this.setState({
                     pickNotes: updatedNotes
                 }, true);
+
+                // Save or delete note from database for proper persistence
+                if (isDeleting) {
+                    this.deletePickNoteFromDatabase(pickKey);
+                } else {
+                    this.savePickNoteToDatabase(pickKey, note.trim());
+                }
+            }
+
+            async savePickNoteToDatabase(pickKey, noteText) {
+                try {
+                    console.log('💾 Saving pick note to database:', { pickKey, noteText });
+                    
+                    const response = await fetch('/api/save-pick-note', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            pickKey,
+                            note: noteText,
+                            timestamp: Date.now()
+                        })
+                    });
+
+                    if (response.ok) {
+                        console.log('✅ Pick note saved to database successfully');
+                    } else {
+                        console.warn('⚠️ Failed to save pick note to database:', response.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Error saving pick note to database:', error);
+                }
+            }
+
+            async loadPickNotesFromDatabase() {
+                try {
+                    console.log('📝 Loading pick notes from database...');
+                    
+                    const response = await fetch('/api/load-pick-notes', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const databaseNotes = data.notes || {};
+                        
+                        console.log('✅ Loaded pick notes from database:', databaseNotes);
+                        
+                        // Merge with current notes (database takes precedence)
+                        const currentNotes = this.state.pickNotes || {};
+                        const mergedNotes = { ...currentNotes, ...databaseNotes };
+                        
+                        this.setState({ pickNotes: mergedNotes }, false); // Don't broadcast to avoid loops
+                    } else {
+                        console.warn('⚠️ Failed to load pick notes from database:', response.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading pick notes from database:', error);
+                }
+            }
+
+            async deletePickNoteFromDatabase(pickKey) {
+                try {
+                    console.log('🗑️ Deleting pick note from database:', pickKey);
+                    
+                    const response = await fetch(`/api/delete-pick-note?pickKey=${encodeURIComponent(pickKey)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        console.log('✅ Pick note deleted from database successfully');
+                    } else {
+                        console.warn('⚠️ Failed to delete pick note from database:', response.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Error deleting pick note from database:', error);
+                }
             }
 
             tradePlayer(playerId, fromTeamId, toTeamId) {
